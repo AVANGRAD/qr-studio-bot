@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from bot.keyboards import (
     editor_kb,
+    emblem_menu,
     eye_menu,
     logo_menu,
     palette_menu,
@@ -26,6 +27,7 @@ def _markups():
         palette_menu(0),
         preset_menu(0),
         logo_menu(draft),
+        emblem_menu(0),
         photo_menu(draft),
         size_menu(1024),
     ]
@@ -52,3 +54,8 @@ def test_editor_has_downloads() -> None:
 def test_editor_has_photo_button() -> None:
     callbacks = {button.callback_data for row in editor_kb(Draft(content="x")).inline_keyboard for button in row}
     assert "photo:menu" in callbacks
+
+
+def test_emblem_menu_callbacks() -> None:
+    callbacks = {button.callback_data for row in emblem_menu(0).inline_keyboard for button in row}
+    assert {"logo:preset:heart", "logo:preset:star"}.issubset(callbacks)

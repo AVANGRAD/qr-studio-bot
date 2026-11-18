@@ -28,7 +28,7 @@ PRESET_KEYS = set(PRESETS)
 
 
 def _card(kind: str, key: str, name: str, **extra) -> dict:
-    return {"key": key, "name": name, "thumb": f"/app/thumbs/{kind}/{key}.png?v=figure2", **extra}
+    return {"key": key, "name": name, "thumb": f"/app/thumbs/{kind}/{key}.png?v=variety1", **extra}
 
 
 def catalog() -> dict:

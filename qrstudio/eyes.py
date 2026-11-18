@@ -6,7 +6,14 @@ from functools import lru_cache
 
 from PIL import Image, ImageChops, ImageDraw
 
-from .shapes import Point, _polygon, flower_points, leaf_points, star_points
+from .shapes import (
+    Point,
+    _polygon,
+    flower_points,
+    heart_points,
+    leaf_points,
+    star_points,
+)
 
 
 @dataclass(frozen=True)
@@ -26,6 +33,10 @@ EYE_STYLES: dict[str, EyeStyle] = {
     "flower": EyeStyle("flower", "Цветок"),
     "hexagon": EyeStyle("hexagon", "Шестиугольник"),
     "shield": EyeStyle("shield", "Щит"),
+    "capsule": EyeStyle("capsule", "Капсула"),
+    "octagon": EyeStyle("octagon", "Восьмиугольник"),
+    "spark": EyeStyle("spark", "Искра"),
+    "heart": EyeStyle("heart", "Сердце"),
 }
 
 
@@ -74,6 +85,29 @@ def _shape(d: ImageDraw.ImageDraw, style: str, cx: float, cy: float, radius: flo
         d.polygon(_polygon(pts), fill=fill)
     elif style == "shield":
         d.polygon(_polygon(_shield_points(cx, cy, radius)), fill=fill)
+    elif style == "capsule":
+        d.rounded_rectangle((cx - radius, cy - radius, cx + radius, cy + radius), radius=radius * 0.5, fill=fill)
+    elif style == "octagon":
+        cut = radius * 0.14
+        d.polygon(
+            _polygon(
+                [
+                    (cx - radius + cut, cy - radius),
+                    (cx + radius - cut, cy - radius),
+                    (cx + radius, cy - radius + cut),
+                    (cx + radius, cy + radius - cut),
+                    (cx + radius - cut, cy + radius),
+                    (cx - radius + cut, cy + radius),
+                    (cx - radius, cy + radius - cut),
+                    (cx - radius, cy - radius + cut),
+                ]
+            ),
+            fill=fill,
+        )
+    elif style == "spark":
+        d.polygon(_polygon(star_points(cx, cy, radius, radius * 0.34, points=4)), fill=fill)
+    elif style == "heart":
+        d.polygon(_polygon(heart_points(cx, cy, radius * 0.96)), fill=fill)
     else:
         d.rectangle((cx - radius, cy - radius, cx + radius, cy + radius), fill=fill)
 
@@ -93,7 +127,7 @@ def _shape_variant(d: ImageDraw.ImageDraw, style: str, cx: float, cy: float, rad
         _shape(d, style, cx, cy, radius * scale, fill)
 
 
-UNSAFE_EYE_STYLES = {"leaf", "star", "cat_eye", "hexagon"}
+UNSAFE_EYE_STYLES = {"leaf", "star", "cat_eye", "hexagon", "heart"}
 
 
 @lru_cache(maxsize=512)

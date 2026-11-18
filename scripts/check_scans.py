@@ -11,10 +11,11 @@ sys.path.insert(0, str(ROOT))
 
 from PIL import Image, ImageDraw
 
+from qrstudio.emblems import emblem_image, emblem_keys
 from qrstudio.eyes import eye_keys
 from qrstudio.logo import font, prepare_logo
 from qrstudio.masks import shape_keys
-from qrstudio.presets import palette_keys
+from qrstudio.presets import PRESETS, palette_keys
 from qrstudio.render import RenderOptions, render
 from qrstudio.shapes import MODULE_STYLES
 
@@ -97,6 +98,10 @@ def main() -> int:
     for size in (512, 768):
         tests.append((f"photo_{size}", RenderOptions(content="", photo=photo, module_style="dot", eye_style="circle", palette="blue"), size, "photos"))
     tests.append(("photo_logo", RenderOptions(content="", photo=photo, module_style="dot", eye_style="circle", palette="blue", logo=logo, logo_mode="plate"), 768, "photos"))
+    for key, preset in PRESETS.items():
+        tests.append((f"preset_{key}", RenderOptions(content="", shape=preset.shape, module_style=preset.module_style, eye_style=preset.eye_style, palette=preset.palette, silhouette=preset.shape != "square"), 768, "presets"))
+    for key in emblem_keys():
+        tests.append((f"emblem_{key}", RenderOptions(content="", shape="rounded", module_style="dot", eye_style="circle", palette="blue", logo=emblem_image(key, 512), logo_mode="badge"), 512, "emblems"))
 
     failures: list[tuple[str, str]] = []
     for name, options, size, folder in tests:

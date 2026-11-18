@@ -70,9 +70,11 @@ async def _accept_content(message: Message, state: FSMContext, raw: str) -> None
         if data.get("pending_logo"):
             draft.logo_png = data["pending_logo"]
             draft.logo_mode = data.get("pending_logo_mode", "plate")
+            draft.logo_label = data.get("pending_logo_label", "")
         if data.get("pending_monogram"):
             draft.logo_mode = "monogram"
             draft.logo_text = data["pending_monogram"]
+            draft.logo_label = ""
         if data.get("pending_photo"):
             draft.photo_bytes = data["pending_photo"]
         pending_webapp = data.get("pending_webapp")
@@ -80,6 +82,7 @@ async def _accept_content(message: Message, state: FSMContext, raw: str) -> None
             apply_settings(draft, pending_webapp)
         data.pop("pending_logo", None)
         data.pop("pending_logo_mode", None)
+        data.pop("pending_logo_label", None)
         data.pop("pending_monogram", None)
         data.pop("pending_photo", None)
         data.pop("pending_webapp", None)

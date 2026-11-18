@@ -3,6 +3,7 @@ from __future__ import annotations
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from qrstudio.emblems import emblem_keys, emblem_name
 from qrstudio.eyes import eye_keys, eye_name
 from qrstudio.masks import SHAPE_CATEGORIES, shape_name
 from qrstudio.presets import PALETTES, PRESETS, get_palette, get_preset
@@ -28,6 +29,7 @@ LOGO_MODES = {
     "texture": "Текстура",
     "background": "Фон",
     "corner": "Угол",
+    "badge": "Медальон",
     "monogram": "Монограмма",
 }
 SIZES = (512, 1024, 2048)
@@ -77,7 +79,7 @@ def editor_kb(draft: Draft, webapp: bool = False) -> InlineKeyboardMarkup:
     if draft.logo_mode == "monogram":
         logo_label = "монограмма"
     elif draft.has_logo:
-        logo_label = LOGO_MODES.get(draft.logo_mode, "загружен")
+        logo_label = draft.logo_label or LOGO_MODES.get(draft.logo_mode, "загружен")
     builder.row(
         InlineKeyboardButton(text=f"Форма: {shape_name(draft.shape)}", callback_data="shape:menu"),
         InlineKeyboardButton(text=f"Палитра: {get_palette(draft.palette).name}", callback_data="pal:menu:0"),
@@ -184,6 +186,7 @@ def logo_menu(draft: Draft) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="Загрузить логотип", callback_data="logo:upload"),
         InlineKeyboardButton(text="Монограмма", callback_data="logo:monogram"),
     )
+    builder.row(InlineKeyboardButton(text="Готовые иконки", callback_data="logo:presets:0"))
     for key, label in LOGO_MODES.items():
         if key == "monogram":
             continue
@@ -192,6 +195,19 @@ def logo_menu(draft: Draft) -> InlineKeyboardMarkup:
     if draft.has_logo:
         builder.row(InlineKeyboardButton(text="Убрать логотип", callback_data="logo:clear"))
     builder.row(InlineKeyboardButton(text="К редактору", callback_data="back:editor"))
+    return builder.as_markup()
+
+
+def emblem_menu(page: int = 0) -> InlineKeyboardMarkup:
+    keys = emblem_keys()
+    per_page = 8
+    pages = max(1, (len(keys) + per_page - 1) // per_page)
+    page = min(max(0, page), pages - 1)
+    builder = InlineKeyboardBuilder()
+    for key in keys[page * per_page : (page + 1) * per_page]:
+        builder.button(text=emblem_name(key), callback_data=f"logo:preset:{key}")
+    builder.adjust(2)
+    _nav(builder, "logo:presets", page, pages)
     return builder.as_markup()
 
 

@@ -37,6 +37,12 @@ MODULE_STYLES: dict[str, ModuleStyle] = {
     "pixel": ModuleStyle("pixel", "Пиксель", 0.14, variants=3),
     "ring": ModuleStyle("ring", "Кольцо", 0.06),
     "confetti": ModuleStyle("confetti", "Конфетти", 0.02, variants=6),
+    "flower": ModuleStyle("flower", "Цветочек", 0.04),
+    "chevron": ModuleStyle("chevron", "Галочка", 0.04),
+    "arch": ModuleStyle("arch", "Арка", 0.04),
+    "spark": ModuleStyle("spark", "Искра", 0.05),
+    "plus": ModuleStyle("plus", "Плюс", 0.05),
+    "brick": ModuleStyle("brick", "Кирпичик", 0.03, variants=2),
 }
 
 
@@ -127,7 +133,7 @@ def _draw_leaf(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
 
 
 def _draw_flower(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
-    d.polygon(_polygon(flower_points(x + c / 2, y + c / 2, c * 0.44)), fill=255)
+    d.polygon(_polygon(flower_points(x + c / 2, y + c / 2, c * 0.56)), fill=255)
     d.ellipse((x + c * 0.36, y + c * 0.36, x + c * 0.64, y + c * 0.64), fill=0)
 
 
@@ -163,6 +169,37 @@ def _draw_pixel(d: ImageDraw.ImageDraw, x: float, y: float, c: float, variant: i
     offset = (variant - 1) * c * 0.04
     size = c * 0.62
     d.rectangle((x + (c - size) / 2 + offset, y + (c - size) / 2, x + (c + size) / 2 + offset, y + (c + size) / 2), fill=255)
+
+
+def _draw_chevron(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
+    width = max(2, round(c * 0.24))
+    d.line(
+        [(x + c * 0.16, y + c * 0.34), (x + c * 0.5, y + c * 0.66), (x + c * 0.84, y + c * 0.34)],
+        fill=255,
+        width=width,
+        joint="curve",
+    )
+
+
+def _draw_arch(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
+    d.rounded_rectangle((x + c * 0.16, y + c * 0.12, x + c * 0.84, y + c * 0.92), radius=c * 0.34, fill=255)
+
+
+def _draw_spark(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
+    d.polygon(_polygon(star_points(x + c / 2, y + c / 2, c * 0.47, c * 0.13, points=4)), fill=255)
+
+
+def _draw_plus(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
+    w = c * 0.3
+    cx, cy = x + c / 2, y + c / 2
+    d.rounded_rectangle((cx - w / 2, y + c * 0.1, cx + w / 2, y + c * 0.9), radius=w * 0.3, fill=255)
+    d.rounded_rectangle((x + c * 0.1, cy - w / 2, x + c * 0.9, cy + w / 2), radius=w * 0.3, fill=255)
+
+
+def _draw_brick(d: ImageDraw.ImageDraw, x: float, y: float, c: float, variant: int = 0) -> None:
+    width = c * (0.78 if variant % 2 == 0 else 0.62)
+    offset = c * (0.11 if variant % 2 == 0 else 0.19)
+    d.rounded_rectangle((x + offset, y + c * 0.28, x + offset + width, y + c * 0.72), radius=c * 0.08, fill=255)
 
 
 def draw_module(d: ImageDraw.ImageDraw, style: str, x: float, y: float, c: float, variant: int = 0) -> None:
@@ -215,11 +252,21 @@ def draw_module(d: ImageDraw.ImageDraw, style: str, x: float, y: float, c: float
         _draw_confetti(d, x, y, c, variant)
     elif style == "flower":
         _draw_flower(d, x, y, c)
+    elif style == "chevron":
+        _draw_chevron(d, x, y, c)
+    elif style == "arch":
+        _draw_arch(d, x, y, c)
+    elif style == "spark":
+        _draw_spark(d, x, y, c)
+    elif style == "plus":
+        _draw_plus(d, x, y, c)
+    elif style == "brick":
+        _draw_brick(d, x, y, c, variant)
     else:
         d.rectangle((x0, y0, x1, y1), fill=255)
 
 
-MODULE_BASE_STYLES = {"leaf": "rounded", "ring": "dot"}
+MODULE_BASE_STYLES = {"leaf": "rounded", "ring": "dot", "flower": "dot"}
 
 
 @lru_cache(maxsize=4096)
@@ -238,6 +285,8 @@ def module_overlay_sprite(style: str, cell: int, variant: int = 0) -> Image.Imag
     draw = ImageDraw.Draw(image)
     if style == "leaf":
         _draw_leaf(draw, 0, 0, cell)
+    elif style == "flower":
+        _draw_flower(draw, 0, 0, cell)
     elif style == "ring":
         width = max(1, round(cell * 0.14))
         inset = round(cell * 0.16)

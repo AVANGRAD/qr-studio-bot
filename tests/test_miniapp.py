@@ -6,11 +6,11 @@ from bot.services import Draft, webapp_url
 
 def test_catalog_counts() -> None:
     data = catalog()
-    assert sum(len(group["items"]) for group in data["shapes"]) == 44
-    assert len(data["modules"]) == 18
-    assert len(data["eyes"]) == 10
-    assert len(data["palettes"]) == 15
-    assert len(data["presets"]) == 18
+    assert sum(len(group["items"]) for group in data["shapes"]) == 52
+    assert len(data["modules"]) == 24
+    assert len(data["eyes"]) == 14
+    assert len(data["palettes"]) == 19
+    assert len(data["presets"]) == 25
     assert data["sizes"] == [512, 1024, 2048]
 
 

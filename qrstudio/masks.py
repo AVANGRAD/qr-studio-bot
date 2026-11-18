@@ -390,6 +390,71 @@ def _pumpkin(d: ImageDraw.ImageDraw, s: int) -> None:
     _poly(d, [(s * 0.7, s * 0.48), (s * 0.58, s * 0.56), (s * 0.7, s * 0.58)], 0)
 
 
+def _squircle(d: ImageDraw.ImageDraw, s: int) -> None:
+    pts: list[Point] = []
+    for i in range(96):
+        angle = 2 * math.pi * i / 96
+        c, sn = math.cos(angle), math.sin(angle)
+        x = math.copysign(abs(c) ** 0.5, c)
+        y = math.copysign(abs(sn) ** 0.5, sn)
+        pts.append((s * (0.5 + 0.47 * x), s * (0.5 + 0.47 * y)))
+    _poly(d, pts)
+
+
+def _burst(d: ImageDraw.ImageDraw, s: int) -> None:
+    _poly(d, star_points(s / 2, s / 2, s * 0.49, s * 0.3, points=12))
+
+
+def _clover(d: ImageDraw.ImageDraw, s: int) -> None:
+    for cx, cy in ((0.31, 0.31), (0.69, 0.31), (0.31, 0.69), (0.69, 0.69)):
+        _circle(d, s * cx, s * cy, s * 0.24)
+    _circle(d, s * 0.5, s * 0.5, s * 0.25)
+
+
+def _cactus(d: ImageDraw.ImageDraw, s: int) -> None:
+    d.rounded_rectangle((s * 0.38, s * 0.12, s * 0.62, s * 0.94), radius=s * 0.12, fill=255)
+    d.rounded_rectangle((s * 0.17, s * 0.4, s * 0.43, s * 0.53), radius=s * 0.06, fill=255)
+    d.rounded_rectangle((s * 0.17, s * 0.4, s * 0.3, s * 0.72), radius=s * 0.06, fill=255)
+    d.rounded_rectangle((s * 0.57, s * 0.3, s * 0.83, s * 0.43), radius=s * 0.06, fill=255)
+    d.rounded_rectangle((s * 0.7, s * 0.3, s * 0.83, s * 0.64), radius=s * 0.06, fill=255)
+
+
+def _frog(d: ImageDraw.ImageDraw, s: int) -> None:
+    _circle(d, s * 0.25, s * 0.23, s * 0.15)
+    _circle(d, s * 0.75, s * 0.23, s * 0.15)
+    _ellipse(d, (s * 0.06, s * 0.26, s * 0.94, s * 0.92))
+    _ellipse(d, (s * 0.25, s * 0.38, s * 0.75, s * 0.78), 0)
+    _circle(d, s * 0.25, s * 0.23, s * 0.045, 0)
+    _circle(d, s * 0.75, s * 0.23, s * 0.045, 0)
+    d.arc((s * 0.32, s * 0.5, s * 0.68, s * 0.82), 20, 160, fill=0, width=max(2, round(s * 0.025)))
+
+
+def _whale(d: ImageDraw.ImageDraw, s: int) -> None:
+    _ellipse(d, (s * 0.06, s * 0.38, s * 0.84, s * 0.92))
+    _poly(d, [(s * 0.76, s * 0.58), (s * 0.97, s * 0.3), (s * 0.92, s * 0.86)])
+    _poly(d, [(s * 0.35, s * 0.62), (s * 0.48, s * 0.84), (s * 0.58, s * 0.68)])
+    _circle(d, s * 0.25, s * 0.58, s * 0.035, 0)
+    d.arc((s * 0.12, s * 0.46, s * 0.4, s * 0.72), 20, 120, fill=0, width=max(2, round(s * 0.025)))
+
+
+def _anchor(d: ImageDraw.ImageDraw, s: int) -> None:
+    width = max(3, round(s * 0.065))
+    d.ellipse((s * 0.4, s * 0.03, s * 0.6, s * 0.23), outline=255, width=width)
+    _rect(d, (s * 0.465, s * 0.22, s * 0.535, s * 0.9))
+    _rect(d, (s * 0.28, s * 0.35, s * 0.72, s * 0.43))
+    d.arc((s * 0.12, s * 0.38, s * 0.88, s * 0.98), 20, 160, fill=255, width=width)
+    _poly(d, [(s * 0.12, s * 0.78), (s * 0.04, s * 0.66), (s * 0.18, s * 0.64)])
+    _poly(d, [(s * 0.88, s * 0.78), (s * 0.96, s * 0.66), (s * 0.82, s * 0.64)])
+    _circle(d, s * 0.5, s * 0.13, s * 0.035, 0)
+
+
+def _music_note(d: ImageDraw.ImageDraw, s: int) -> None:
+    _rect(d, (s * 0.55, s * 0.1, s * 0.64, s * 0.72))
+    _ellipse(d, (s * 0.26, s * 0.62, s * 0.6, s * 0.83))
+    _poly(d, [(s * 0.62, s * 0.1), (s * 0.82, s * 0.2), (s * 0.82, s * 0.34), (s * 0.62, s * 0.25)])
+    _ellipse(d, (s * 0.3, s * 0.66, s * 0.42, s * 0.8), 0)
+
+
 SHAPES: dict[str, Shape] = {
     "square": Shape("square", "Квадрат", "Геометрия", _square, True),
     "rounded": Shape("rounded", "Скруглённый квадрат", "Геометрия", _rounded),
@@ -403,6 +468,8 @@ SHAPES: dict[str, Shape] = {
     "star8": Shape("star8", "Звезда 8", "Геометрия", _star8),
     "cross": Shape("cross", "Крест", "Геометрия", _cross),
     "shield": Shape("shield", "Щит", "Геометрия", _shield),
+    "squircle": Shape("squircle", "Суперэллипс", "Геометрия", _squircle),
+    "burst": Shape("burst", "Вспышка", "Геометрия", _burst),
     "heart": Shape("heart", "Сердце", "Природа", _heart),
     "leaf": Shape("leaf", "Лист", "Природа", _leaf),
     "flower": Shape("flower", "Цветок", "Природа", _flower),
@@ -413,6 +480,8 @@ SHAPES: dict[str, Shape] = {
     "wave": Shape("wave", "Волна", "Природа", _wave),
     "drop": Shape("drop", "Капля", "Природа", _drop),
     "planet": Shape("planet", "Планета", "Природа", _planet),
+    "clover": Shape("clover", "Клевер", "Природа", _clover),
+    "cactus": Shape("cactus", "Кактус", "Природа", _cactus),
     "cat": Shape("cat", "Котик", "Животные", _cat),
     "bear": Shape("bear", "Медвежонок", "Животные", _bear),
     "bunny": Shape("bunny", "Зайчик", "Животные", _bunny),
@@ -425,6 +494,8 @@ SHAPES: dict[str, Shape] = {
     "ladybug": Shape("ladybug", "Божья коровка", "Животные", _ladybug),
     "turtle": Shape("turtle", "Черепаха", "Животные", _turtle),
     "penguin": Shape("penguin", "Пингвин", "Животные", _penguin),
+    "frog": Shape("frog", "Лягушка", "Животные", _frog),
+    "whale": Shape("whale", "Кит", "Животные", _whale),
     "crown": Shape("crown", "Корона", "Символы", _crown),
     "cup": Shape("cup", "Кубок", "Символы", _cup),
     "mask": Shape("mask", "Маска", "Символы", _mask),
@@ -435,6 +506,8 @@ SHAPES: dict[str, Shape] = {
     "gift": Shape("gift", "Подарок", "Символы", _gift),
     "tree": Shape("tree", "Ёлка", "Символы", _tree),
     "pumpkin": Shape("pumpkin", "Тыква", "Символы", _pumpkin),
+    "anchor": Shape("anchor", "Якорь", "Символы", _anchor),
+    "music_note": Shape("music_note", "Нота", "Символы", _music_note),
 }
 
 SHAPE_CATEGORIES: dict[str, list[str]] = {}
@@ -473,6 +546,14 @@ SHAPE_CENTERS: dict[str, tuple[float, float]] = {
     "gift": (0.5, 0.62),
     "tree": (0.5, 0.55),
     "pumpkin": (0.5, 0.58),
+    "squircle": (0.5, 0.5),
+    "burst": (0.5, 0.5),
+    "clover": (0.5, 0.5),
+    "cactus": (0.5, 0.55),
+    "frog": (0.5, 0.55),
+    "whale": (0.45, 0.58),
+    "anchor": (0.5, 0.5),
+    "music_note": (0.5, 0.54),
 }
 
 

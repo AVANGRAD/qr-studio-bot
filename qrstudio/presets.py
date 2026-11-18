@@ -94,6 +94,22 @@ PALETTES: dict[str, Palette] = {
         Gradient(((247, 178, 217, 255), (167, 216, 240, 255), (184, 224, 176, 255)), angle=20),
         Gradient(((247, 178, 217, 255), (167, 216, 240, 255)), angle=35), "#EADFF5",
     ),
+    "berry": Palette(
+        "berry", "Ягодный", "#5B0F33", "#FFF4F8", "#C2185B",
+        Gradient(((198, 24, 91, 255), (91, 15, 51, 255)), angle=30), "#F8BBD0",
+    ),
+    "ocean": Palette(
+        "ocean", "Океан", "#064E5B", "#F0FDFF", "#00A6A6",
+        Gradient(((0, 166, 166, 255), (6, 78, 91, 255)), angle=35), "#A7E8E5",
+    ),
+    "sunset": Palette(
+        "sunset", "Закат", "#6A1B2A", "#FFF8F0", "#F4511E",
+        Gradient(((244, 81, 30, 255), (173, 20, 87, 255)), angle=25), "#FFC9A8",
+    ),
+    "midnight": Palette(
+        "midnight", "Полночь", "#11142E", "#F1F4FF", "#5C6BC0",
+        Gradient(((92, 107, 192, 255), (17, 20, 46, 255)), angle=45), "#C5CAE9",
+    ),
 }
 
 
@@ -116,6 +132,13 @@ PRESETS: dict[str, Preset] = {
     "panda": Preset("panda", "Панда", "panda", "dot", "circle", "mono", tags=("животные", "милый")),
     "rocket": Preset("rocket", "Ракета", "rocket", "triangle", "star", "navy", tags=("символы", "запуск")),
     "gift": Preset("gift", "Подарок", "gift", "confetti", "flower", "red", tags=("праздник", "яркий")),
+    "cosmic": Preset("cosmic", "Космос", "planet", "spark", "star", "midnight", tags=("космос", "яркий")),
+    "forest": Preset("forest", "Лесная сказка", "tree", "flower", "leaf", "green", tags=("природа", "сказка")),
+    "candy": Preset("candy", "Карамель", "heart", "heart", "heart", "berry", tags=("сладкий", "подарок")),
+    "ocean": Preset("ocean", "Океан", "wave", "wave", "circle", "ocean", tags=("вода", "спокойный")),
+    "retro": Preset("retro", "Ретро", "speech_bubble", "brick", "square", "sunset", tags=("ретро", "контраст")),
+    "royal": Preset("royal", "Королевский", "crown", "plus", "octagon", "purple", tags=("статус", "премиум")),
+    "sailor": Preset("sailor", "Морской", "anchor", "arch", "capsule", "ocean", tags=("море", "путешествие")),
 }
 
 

@@ -81,3 +81,8 @@ def test_prepare_photo_normalizes_to_jpeg() -> None:
 def test_caption_marks_photo_mode() -> None:
     draft = Draft(content="https://example.com", photo_bytes=b"jpeg")
     assert "Фон: фото" in caption(draft)
+
+
+def test_caption_marks_emblem_logo() -> None:
+    draft = Draft(content="https://example.com", logo_png=b"png", logo_label="Сердце", logo_mode="badge")
+    assert "Сердце · медальон" in caption(draft)

@@ -265,6 +265,7 @@ def _logo_plate(canvas: Image.Image, options: RenderOptions, qr_box: tuple[int, 
     else:
         logo_size = max(24, int(qr_px * options.logo_size))
     logo_size = min(logo_size, int(qr_px * 0.25))
+    is_badge = options.logo_mode == "badge"
     if options.logo_mode == "monogram":
         logo_img = monogram_image(options.logo_text or "QR", logo_size, qr_fg, (0, 0, 0, 0))
     else:
@@ -274,7 +275,7 @@ def _logo_plate(canvas: Image.Image, options: RenderOptions, qr_box: tuple[int, 
             from .logo import monochrome
 
             logo_img = monochrome(logo_img, qr_fg)
-    plate_size = int(logo_size * (1.2 if options.logo_mode == "corner" else 1.32))
+    plate_size = int(logo_size * (1.2 if options.logo_mode == "corner" else (1.4 if is_badge else 1.32)))
     if options.logo_mode == "corner":
         margin = max(8, int(qr_px * 0.02))
         left = x1 - plate_size - margin
@@ -287,13 +288,19 @@ def _logo_plate(canvas: Image.Image, options: RenderOptions, qr_box: tuple[int, 
     if bright and options.logo_plate_color is None:
         plate_color = qr_fg
     plate_box = (left, top, left + plate_size, top + plate_size)
-    radius = plate_size * (0.28 if options.logo_mode != "corner" else 0.22)
+    radius = plate_size / 2 if is_badge else plate_size * (0.28 if options.logo_mode != "corner" else 0.22)
     shadow = Image.new("RGBA", (canvas.width, canvas.height), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).rounded_rectangle(
-        (left + 2, top + max(2, canvas.width // 400), left + plate_size + 2, top + plate_size + max(2, canvas.width // 400)),
-        radius=radius,
-        fill=(0, 0, 0, 70),
+    shadow_draw = ImageDraw.Draw(shadow)
+    shadow_box = (
+        left + 2,
+        top + max(2, canvas.width // 400),
+        left + plate_size + 2,
+        top + plate_size + max(2, canvas.width // 400),
     )
+    if is_badge:
+        shadow_draw.ellipse(shadow_box, fill=(0, 0, 0, 70))
+    else:
+        shadow_draw.rounded_rectangle(shadow_box, radius=radius, fill=(0, 0, 0, 70))
     shadow = shadow.filter(ImageFilter.GaussianBlur(max(2, canvas.width // 350)))
     canvas.alpha_composite(shadow)
     plate = _rounded_layer(
@@ -547,6 +554,8 @@ def render(options: RenderOptions) -> RenderResult:
             variant = (x * 3 + y * 5) % 3
         elif style == "confetti":
             variant = (x * 31 + y * 17 + variant_seed) % 6
+        elif style == "brick":
+            variant = (x + y) % 2
         else:
             variant = 0
         sprite = module_sprite(style, cell, variant)
@@ -621,12 +630,13 @@ def render(options: RenderOptions) -> RenderResult:
         else:
             logo = outline(logo, qr_bg, max(2, logo_size // 30))
         canvas.alpha_composite(logo, (qr_x0 + (qr_px - logo.width) // 2, qr_y0 + (qr_px - logo.height) // 2))
-    elif (opts.logo is not None or opts.logo_mode == "monogram") and opts.logo_mode in {"plate", "corner", "monogram"}:
+    elif (opts.logo is not None or opts.logo_mode == "monogram") and opts.logo_mode in {"plate", "corner", "badge", "monogram"}:
         _logo_plate(canvas, opts, (qr_x0, qr_y0, qr_x0 + qr_px, qr_y0 + qr_px), qr_fg, qr_bg)
 
     final = canvas.resize((S, S), Image.Resampling.LANCZOS)
-    if opts.safe_mode and opts.logo is not None and opts.logo_mode in {"plate", "corner"} and qr_px:
-        coverage = (opts.logo_size * 1.32) ** 2
+    if opts.safe_mode and opts.logo is not None and opts.logo_mode in {"plate", "corner", "badge"} and qr_px:
+        plate_ratio = 1.2 if opts.logo_mode == "corner" else (1.4 if opts.logo_mode == "badge" else 1.32)
+        coverage = (opts.logo_size * plate_ratio) ** 2
         if coverage > 0.085:
             warnings.append("Логотип крупный — проверь сканирование камерой.")
     final_qr_fg = qr_fg_spec
@@ -843,18 +853,23 @@ def render_svg(options: RenderOptions) -> str:
     if silhouette:
         parts.append("</g>")
     logo = opts.logo
-    if logo is not None and opts.logo_mode in {"plate", "corner", "knockout"}:
+    if logo is not None and opts.logo_mode in {"plate", "corner", "knockout", "badge"}:
         logo_size = max(24, int(cell * n * opts.logo_size))
         if opts.logo_mode == "corner":
             logo_size = max(24, int(cell * n * min(opts.logo_size, 0.105)))
-        plate_size = int(logo_size * (1.2 if opts.logo_mode == "corner" else 1.32))
+        badge = opts.logo_mode == "badge"
+        plate_size = int(logo_size * (1.2 if opts.logo_mode == "corner" else (1.4 if badge else 1.32)))
         if opts.logo_mode == "corner":
             left = qx + cell * n - plate_size - max(8, int(cell * n * 0.02))
             top = qy + cell * n - plate_size - max(8, int(cell * n * 0.02))
         else:
             left = qx + (cell * n - plate_size) / 2
             top = qy + (cell * n - plate_size) / 2
-        if opts.logo_mode != "knockout":
+        if badge:
+            parts.append(
+                f'<circle cx="{left + plate_size / 2:.2f}" cy="{top + plate_size / 2:.2f}" r="{plate_size / 2:.2f}" fill="{bg_paint}" stroke="{_svg_color(mix(qr_bg, (0, 0, 0, 255), 0.18))}" stroke-width="{max(1, S // 700)}"/>'
+            )
+        elif opts.logo_mode != "knockout":
             parts.append(
                 f'<rect x="{left:.2f}" y="{top:.2f}" width="{plate_size}" height="{plate_size}" rx="{plate_size * 0.28:.2f}" fill="{bg_paint}" stroke="{_svg_color(mix(qr_bg, (0, 0, 0, 255), 0.18))}" stroke-width="{max(1, S // 700)}"/>'
             )

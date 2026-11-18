@@ -9,7 +9,9 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from ..keyboards import LOGO_MODES, logo_menu
+from qrstudio.emblems import EMBLEMS, emblem_image
+
+from ..keyboards import LOGO_MODES, emblem_menu, logo_menu
 from ..services import ContentError, Draft, prepare_uploaded_logo
 from ..states import Flow
 from ..texts import LOGO_NEEDED, LOGO_PROMPT, MONOGRAM_PROMPT, NO_DRAFT
@@ -32,11 +34,56 @@ async def logo_root(callback: CallbackQuery, state: FSMContext) -> None:
     draft = get_draft(await state.get_data()) or Draft(content="")
     await _show(
         callback,
-        "<b>Логотип</b>\nЗагрузи картинку или выбери монограмму.\n"
-        "Плашка — логотип на подложке, вырез — QR «расступается», "
-        "текстура — логотип внутри модулей, фон — водяной знак, угол — маленький логотип в углу.",
+        "<b>Логотип</b>\nЗагрузи картинку, выбери готовую иконку или монограмму.\n"
+        "Плашка — логотип на подложке, медальон — круглая подложка, "
+        "вырез — QR «расступается», текстура — логотип внутри модулей, "
+        "фон — водяной знак, угол — маленький логотип в углу.",
         logo_menu(draft),
     )
+
+
+@router.callback_query(F.data.startswith("logo:presets:"))
+async def logo_presets(callback: CallbackQuery) -> None:
+    parts = (callback.data or "").split(":")
+    page = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+    await callback.answer()
+    await _show(
+        callback,
+        "<b>Готовые иконки</b>\nВыбери нейтральную иконку — она встанет в центр QR. "
+        "Потом можно сменить режим на плашку, медальон, вырез или текстуру.",
+        emblem_menu(page),
+    )
+
+
+@router.callback_query(F.data.startswith("logo:preset:"))
+async def logo_preset(callback: CallbackQuery, state: FSMContext) -> None:
+    key = (callback.data or "").split(":", 2)[-1]
+    emblem = EMBLEMS.get(key)
+    if emblem is None:
+        await callback.answer("Неизвестная иконка", show_alert=True)
+        return
+    image = emblem_image(key, 512)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    payload = buffer.getvalue()
+    data = await state.get_data()
+    draft = get_draft(data)
+    if draft is None:
+        data["pending_logo"] = payload
+        data["pending_logo_mode"] = "plate"
+        data["pending_logo_label"] = emblem.name
+        data.pop("pending_monogram", None)
+        await state.set_data(data)
+        await state.set_state(None)
+        await callback.answer(f"Иконка: {emblem.name}")
+        await callback.message.answer("Иконка сохранена. Теперь пришли ссылку или текст для QR.")
+        return
+    draft.logo_png = payload
+    if draft.logo_mode == "monogram":
+        draft.logo_mode = "plate"
+    draft.logo_label = emblem.name
+    await callback.answer(f"Иконка: {emblem.name}")
+    await send_preview(callback.message, state, draft, size=640)
 
 
 @router.callback_query(F.data == "logo:upload")
@@ -82,6 +129,7 @@ async def logo_clear(callback: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
     data.pop("pending_logo", None)
     data.pop("pending_logo_mode", None)
+    data.pop("pending_logo_label", None)
     await state.set_data(data)
     draft = get_draft(data)
     if draft is None:
@@ -89,6 +137,7 @@ async def logo_clear(callback: CallbackQuery, state: FSMContext) -> None:
         return
     draft.logo_png = None
     draft.logo_mode = "plate"
+    draft.logo_label = ""
     await callback.answer("Логотип убран")
     await send_preview(callback.message, state, draft, size=640)
 
@@ -127,12 +176,15 @@ async def _accept_logo(message: Message, state: FSMContext, bot: Bot, file) -> N
     draft = get_draft(data)
     if draft is None:
         data["pending_logo"] = prepared
+        data["pending_logo_label"] = ""
+        data.pop("pending_monogram", None)
         await state.set_data(data)
         await state.set_state(None)
         await message.answer("Логотип сохранён. Теперь пришли ссылку или текст для QR.")
         return
     draft.logo_png = prepared
     draft.logo_mode = "plate"
+    draft.logo_label = ""
     await state.clear()
     await message.answer("Логотип добавлен.")
     await send_preview(message, state, draft, size=640)
@@ -155,5 +207,6 @@ async def on_monogram(message: Message, state: FSMContext) -> None:
         return
     draft.logo_mode = "monogram"
     draft.logo_text = text
+    draft.logo_label = ""
     await state.clear()
     await send_preview(message, state, draft, size=640)

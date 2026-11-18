@@ -38,6 +38,7 @@ class Draft:
     logo_mode: str = "plate"
     logo_text: str = "QR"
     logo_mono: bool = False
+    logo_label: str = ""
     silhouette: bool = True
     photo_bytes: bytes | None = None
 
@@ -166,6 +167,7 @@ def caption(draft: Draft, result: RenderResult | None = None) -> str:
         "texture": "текстура",
         "background": "фон",
         "corner": "угол",
+        "badge": "медальон",
         "monogram": "монограмма",
     }
     logo = "нет"
@@ -173,6 +175,8 @@ def caption(draft: Draft, result: RenderResult | None = None) -> str:
         logo = f"монограмма «{html.escape(draft.logo_text)}»"
     elif draft.has_logo:
         logo = mode_names.get(draft.logo_mode, draft.logo_mode)
+        if draft.logo_label:
+            logo = f"{html.escape(draft.logo_label)} · {logo}"
     lines = [
         f"<b>QR Studio</b> · {draft.size} px",
         f"<code>{html.escape(short(draft.content))}</code>",

@@ -5,9 +5,10 @@ import xml.etree.ElementTree as ET
 
 from PIL import Image, ImageDraw
 
+from qrstudio.emblems import emblem_image, emblem_keys
 from qrstudio.eyes import eye_keys
 from qrstudio.masks import shape_keys
-from qrstudio.presets import palette_keys
+from qrstudio.presets import PRESETS, palette_keys
 from qrstudio.render import RenderOptions, render, render_svg
 from qrstudio.shapes import MODULE_STYLES
 
@@ -53,7 +54,7 @@ def test_all_palettes() -> None:
 
 def test_logo_modes() -> None:
     logo = _logo()
-    for mode in ("plate", "knockout", "texture", "background", "corner"):
+    for mode in ("plate", "badge", "knockout", "texture", "background", "corner"):
         result = render(RenderOptions(content="https://example.com", shape="cat", logo=logo, logo_mode=mode, size=512))
         assert result.image.size == (512, 512)
     result = render(RenderOptions(content="https://example.com", logo_mode="monogram", logo_text="AK", size=512))
@@ -112,3 +113,26 @@ def test_photo_svg_is_valid_xml() -> None:
     root = ET.fromstring(payload)
     assert root.tag.endswith("svg")
     assert "<image" in payload
+
+
+def test_all_presets_render() -> None:
+    for key, preset in PRESETS.items():
+        result = render(
+            RenderOptions(
+                content="https://example.com",
+                shape=preset.shape,
+                module_style=preset.module_style,
+                eye_style=preset.eye_style,
+                palette=preset.palette,
+                size=256,
+                silhouette=preset.shape != "square",
+            )
+        )
+        assert result.image.size == (256, 256), key
+
+
+def test_emblem_logos_render() -> None:
+    for key in emblem_keys():
+        logo = emblem_image(key, 256)
+        result = render(RenderOptions(content="https://example.com", logo=logo, logo_mode="badge", size=512))
+        assert result.image.size == (512, 512), key
