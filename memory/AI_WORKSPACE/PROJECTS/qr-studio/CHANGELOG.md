@@ -26,3 +26,13 @@
 - Добавлена команда `/app` с inline-кнопкой открытия редактора.
 - Настройки из Mini App до создания QR сохраняются в `pending_webapp` и применяются к следующему тексту.
 - `pytest` 30/30; Render deploy `f40c4e9`.
+
+## 2026-11-18 — QR внутри силуэта
+
+- Добавлен figure-режим: QR вписывается в безопасный квадрат внутри формы, без квадратной плашки.
+- `Draft.silhouette=True`; Mini App thumbnails/preview и shape/preset-плитки используют figure-режим.
+- Добавлены тинт силуэта, внутренний рант, тень и декор; SVG получил те же правила.
+- 11 сложных форм безопасно откатываются в frame с предупреждением.
+- 105 плиток пересобраны; добавлен cache-bust `?v=figure2`, preview — `no-store`.
+- `pytest` 32/32, `ruff` OK, `node --check` OK, scans 184/184.
+- Render deploy `70b4d8d` live; live leaf preview декодируется jsQR.
