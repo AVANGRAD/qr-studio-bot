@@ -15,7 +15,7 @@ from aiohttp import ClientSession, web
 
 from .config import Settings
 from .errors import error_handler
-from .handlers import create, logo, menu, settings, start, webapp
+from .handlers import create, logo, menu, photo, settings, start, webapp
 from .miniapp import setup as setup_miniapp
 from .services import webapp_entry_url
 
@@ -45,6 +45,7 @@ def build() -> tuple[Bot, Dispatcher, Settings]:
     dp.include_router(start.router)
     dp.include_router(webapp.router)
     dp.include_router(logo.router)
+    dp.include_router(photo.router)
     dp.include_router(create.router)
     dp.include_router(menu.router)
     dp.include_router(settings.router)

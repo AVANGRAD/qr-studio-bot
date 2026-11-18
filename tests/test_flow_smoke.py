@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import io
 from types import SimpleNamespace
 
 import pytest
 from aiogram.types import User
+from PIL import Image
 
-from bot.handlers import create, logo, settings, webapp
+from bot.handlers import create, logo, photo, settings, webapp
 from bot.services import Draft
 from bot.states import Flow
 
@@ -177,4 +179,29 @@ async def test_webapp_pending_applied_to_next_content() -> None:
     assert draft.shape == "leaf"
     assert draft.palette == "wood"
     assert draft.size == 512
+    assert message.photos
+
+
+class FakeBot:
+    async def download(self, file, destination):
+        destination.write(file.data)
+        return destination
+
+
+@pytest.mark.asyncio
+async def test_photo_before_text_becomes_background() -> None:
+    state = FakeState()
+    message = FakeMessage()
+    image = Image.new("RGB", (300, 400), (100, 150, 200))
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG")
+    file = SimpleNamespace(data=buffer.getvalue(), file_size=len(buffer.getvalue()))
+    await photo._accept_photo(message, state, FakeBot(), file)
+    assert state.state is None
+    assert (await state.get_data())["pending_photo"]
+    message.text = "https://example.com"
+    await create.on_text(message, state)
+    draft = Draft.from_data(await state.get_data())
+    assert draft is not None
+    assert draft.has_photo
     assert message.photos

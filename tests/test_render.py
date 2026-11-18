@@ -94,3 +94,21 @@ def test_draft_defaults_to_figure_mode() -> None:
     from bot.services import Draft
 
     assert Draft(content="https://example.com").silhouette is True
+
+
+def test_photo_overlay_keeps_photo() -> None:
+    photo = Image.new("RGB", (600, 900), (120, 180, 140))
+    draw = ImageDraw.Draw(photo)
+    draw.ellipse((180, 300, 420, 620), fill=(40, 90, 180))
+    result = render(RenderOptions(content="https://example.com", photo=photo, size=512))
+    assert result.photo is True
+    assert result.image.size == (512, 512)
+    assert result.qr_box[2] > 300
+
+
+def test_photo_svg_is_valid_xml() -> None:
+    photo = Image.new("RGB", (600, 900), (120, 180, 140))
+    payload = render_svg(RenderOptions(content="https://example.com", photo=photo, size=512))
+    root = ET.fromstring(payload)
+    assert root.tag.endswith("svg")
+    assert "<image" in payload

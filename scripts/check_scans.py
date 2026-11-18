@@ -35,6 +35,18 @@ def test_logo() -> Path:
     return path
 
 
+def test_photo() -> Image.Image:
+    path = OUT / "photo-source.png"
+    if not path.exists():
+        OUT.mkdir(parents=True, exist_ok=True)
+        image = Image.new("RGB", (900, 1200), "#8fbf9f")
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((80, 110, 820, 480), fill="#ef8fd0")
+        draw.ellipse((260, 560, 620, 920), fill="#1d5a9f")
+        image.save(path)
+    return Image.open(path).convert("RGB")
+
+
 def decode(path: Path) -> dict:
     output = subprocess.run(["node", str(DECODER), str(path)], capture_output=True, text=True, timeout=30, check=False)
     if output.returncode != 0:
@@ -62,6 +74,7 @@ def run(name: str, options: RenderOptions, size: int, folder: str) -> tuple[str,
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     logo = prepare_logo(test_logo())
+    photo = test_photo()
     tests: list[tuple[str, RenderOptions, int, str]] = []
 
     for key in shape_keys():
@@ -81,6 +94,9 @@ def main() -> int:
         tests.append((f"figure_{key}", RenderOptions(content="", shape=key, silhouette=True, module_style="dot", eye_style="circle", palette="blue"), 768, "figures"))
     for size in (512, 1024, 2048):
         tests.append((f"size_{size}", RenderOptions(content="", shape="rounded", module_style="dot", eye_style="circle", palette="red"), size, "sizes"))
+    for size in (512, 768):
+        tests.append((f"photo_{size}", RenderOptions(content="", photo=photo, module_style="dot", eye_style="circle", palette="blue"), size, "photos"))
+    tests.append(("photo_logo", RenderOptions(content="", photo=photo, module_style="dot", eye_style="circle", palette="blue", logo=logo, logo_mode="plate"), 768, "photos"))
 
     failures: list[tuple[str, str]] = []
     for name, options, size, folder in tests:

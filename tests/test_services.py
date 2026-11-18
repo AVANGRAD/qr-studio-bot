@@ -12,6 +12,7 @@ from bot.services import (
     caption,
     normalize_content,
     prepare_uploaded_logo,
+    prepare_uploaded_photo,
 )
 from qrstudio.render import RenderOptions, render
 
@@ -65,3 +66,18 @@ def test_caption_escapes_content() -> None:
     text = caption(draft, result)
     assert "&lt;b&gt;test&lt;/b&gt;" in text
     assert "<b>QR Studio</b>" in text
+
+
+def test_prepare_photo_normalizes_to_jpeg() -> None:
+    image = Image.new("RGB", (2400, 1600), (90, 140, 180))
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    prepared = prepare_uploaded_photo(buffer.getvalue())
+    assert prepared.startswith(b"\xff\xd8")
+    with Image.open(io.BytesIO(prepared)) as result:
+        assert max(result.size) <= 1600
+
+
+def test_caption_marks_photo_mode() -> None:
+    draft = Draft(content="https://example.com", photo_bytes=b"jpeg")
+    assert "Фон: фото" in caption(draft)

@@ -5,6 +5,7 @@ from bot.keyboards import (
     eye_menu,
     logo_menu,
     palette_menu,
+    photo_menu,
     preset_menu,
     shape_list,
     shape_menu,
@@ -25,6 +26,7 @@ def _markups():
         palette_menu(0),
         preset_menu(0),
         logo_menu(draft),
+        photo_menu(draft),
         size_menu(1024),
     ]
 
@@ -45,3 +47,8 @@ def test_editor_has_downloads() -> None:
     assert {"dl:png", "dl:svg", "shape:menu", "pal:menu:0"}.issubset(callbacks)
     web_apps = [button.web_app for row in editor_kb(Draft(content="x"), webapp=True).inline_keyboard for button in row if button.web_app]
     assert web_apps and web_apps[0].url.startswith("https://")
+
+
+def test_editor_has_photo_button() -> None:
+    callbacks = {button.callback_data for row in editor_kb(Draft(content="x")).inline_keyboard for button in row}
+    assert "photo:menu" in callbacks

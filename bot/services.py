@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from urllib.parse import urlencode, urlparse
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from qrstudio.eyes import eye_name
 from qrstudio.logo import prepare_logo
@@ -39,6 +39,7 @@ class Draft:
     logo_text: str = "QR"
     logo_mono: bool = False
     silhouette: bool = True
+    photo_bytes: bytes | None = None
 
     @classmethod
     def from_data(cls, data: dict) -> Draft | None:
@@ -62,6 +63,18 @@ class Draft:
             return None
         try:
             return Image.open(io.BytesIO(self.logo_png)).convert("RGBA")
+        except Exception:  # noqa: BLE001
+            return None
+
+    @property
+    def has_photo(self) -> bool:
+        return bool(self.photo_bytes)
+
+    def photo_image(self) -> Image.Image | None:
+        if not self.photo_bytes:
+            return None
+        try:
+            return Image.open(io.BytesIO(self.photo_bytes)).convert("RGBA")
         except Exception:  # noqa: BLE001
             return None
 
@@ -97,6 +110,7 @@ def _options(draft: Draft, size: int | None = None) -> RenderOptions:
         logo_text=draft.logo_text,
         logo_mono=draft.logo_mono,
         silhouette=draft.silhouette,
+        photo=draft.photo_image(),
     )
 
 
@@ -163,10 +177,17 @@ def caption(draft: Draft, result: RenderResult | None = None) -> str:
         f"<b>QR Studio</b> · {draft.size} px",
         f"<code>{html.escape(short(draft.content))}</code>",
         "",
-        f"Форма: {shape_name(draft.shape)} · Узор: {style_name(draft.module_style)}",
-        f"Глаза: {eye_name(draft.eye_style)} · Палитра: {get_palette(draft.palette).name}",
-        f"Логотип: {logo}",
     ]
+    if draft.has_photo:
+        lines.append("Фон: фото · QR на светлой карточке")
+    else:
+        lines.append(f"Форма: {shape_name(draft.shape)} · Узор: {style_name(draft.module_style)}")
+    lines.extend(
+        [
+            f"Глаза: {eye_name(draft.eye_style)} · Палитра: {get_palette(draft.palette).name}",
+            f"Логотип: {logo}",
+        ]
+    )
     if result:
         lines.append(f"Модуль: {result.module_px:.1f} px · Контраст: {result.contrast:.1f}:1")
         for warning in result.warnings:
@@ -185,6 +206,25 @@ def preset_draft(content: str, key: str) -> Draft:
     draft.palette = preset.palette
     draft.logo_mode = preset.logo_mode
     return draft
+
+
+def prepare_uploaded_photo(raw: bytes) -> bytes:
+    if len(raw) > 12 * 1024 * 1024:
+        raise ContentError("Фото слишком большое. Максимум — 12 МБ.")
+    try:
+        with Image.open(io.BytesIO(raw)) as image:
+            image = ImageOps.exif_transpose(image).convert("RGB")
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ContentError("Не удалось прочитать фото. Пришли PNG, JPG или WebP.") from exc
+    image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG", quality=88, optimize=True)
+    payload = buffer.getvalue()
+    if len(payload) > 3 * 1024 * 1024:
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=76, optimize=True)
+        payload = buffer.getvalue()
+    return payload
 
 
 def prepare_uploaded_logo(raw: bytes) -> bytes:

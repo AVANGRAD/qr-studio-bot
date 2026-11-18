@@ -5,3 +5,4 @@ class Flow(StatesGroup):
     content = State()
     logo = State()
     monogram = State()
+    photo = State()

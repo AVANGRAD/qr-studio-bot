@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
 from . import colors as C
 from .colors import (
@@ -43,6 +43,10 @@ class RenderOptions:
     margin: float = 0.08
     frame: bool | None = None
     silhouette: bool = False
+    photo: Image.Image | None = None
+    photo_card: float = 0.42
+    photo_inset: float = 0.055
+    photo_opacity: int = 244
     transparent: bool = False
     logo: Image.Image | None = None
     logo_mode: str = "plate"
@@ -61,7 +65,19 @@ class RenderOptions:
         border = max(0, min(8, int(self.border)))
         logo_size = max(0.08, min(0.26, float(self.logo_size)))
         margin = max(0.02, min(0.2, float(self.margin)))
-        return replace(self, size=size, border=border, logo_size=logo_size, margin=margin)
+        photo_card = max(0.32, min(0.54, float(self.photo_card)))
+        photo_inset = max(0.02, min(0.12, float(self.photo_inset)))
+        photo_opacity = max(160, min(255, int(self.photo_opacity)))
+        return replace(
+            self,
+            size=size,
+            border=border,
+            logo_size=logo_size,
+            margin=margin,
+            photo_card=photo_card,
+            photo_inset=photo_inset,
+            photo_opacity=photo_opacity,
+        )
 
 
 @dataclass
@@ -75,6 +91,7 @@ class RenderResult:
     module_px: float = 0.0
     contrast: float = 0.0
     masked: bool = False
+    photo: bool = False
     qr_box: tuple[int, int, int, int] = (0, 0, 0, 0)
     final_qr_fg: ColorSpec | None = None
     final_qr_bg: ColorSpec | None = None
@@ -316,6 +333,17 @@ def _apply_texture(mask: Image.Image, texture: Image.Image) -> Image.Image:
     return result
 
 
+def _photo_canvas(photo: Image.Image, size: int) -> Image.Image:
+    source = photo.convert("RGB")
+    background = ImageOps.fit(source, (size, size), method=Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+    background = background.filter(ImageFilter.GaussianBlur(max(2, size // 80)))
+    background = ImageEnhance.Brightness(background).enhance(0.64)
+    foreground = ImageOps.contain(source, (size, size), method=Image.Resampling.LANCZOS)
+    canvas = background.convert("RGBA")
+    canvas.alpha_composite(foreground.convert("RGBA"), ((size - foreground.width) // 2, (size - foreground.height) // 2))
+    return canvas
+
+
 def render(options: RenderOptions) -> RenderResult:
     opts = options.normalized()
     warnings: list[str] = []
@@ -334,9 +362,12 @@ def render(options: RenderOptions) -> RenderResult:
         eye_spec = qr_fg_spec
     eye_color = parse_color(eye_spec)
 
-    silhouette = opts.silhouette and opts.shape != "square"
+    photo_mode = opts.photo is not None
+    silhouette = opts.silhouette and opts.shape != "square" and not photo_mode
     frame = opts.frame if opts.frame is not None else (opts.shape != "square" and not silhouette)
     if opts.shape == "square" and opts.frame is None:
+        frame = False
+    if photo_mode:
         frame = False
     error = opts.error or ("h" if (opts.logo is not None or silhouette) else "m")
     qr = make_qr(opts.content, error=error, border=opts.border)
@@ -346,7 +377,21 @@ def render(options: RenderOptions) -> RenderResult:
     ss = 2 if S <= 1024 else 1
     W = S * ss
     p_scale, center = _fit_plate(opts.shape) if (frame or silhouette) else (0.92, (0.5, 0.5))
-    if frame:
+    if photo_mode:
+        card = W * opts.photo_card
+        cell = max(2, int((card * 0.86) // n))
+        qr_px = cell * n
+        card = qr_px / 0.86
+        margin = round(W * opts.photo_inset)
+        card_x1 = W - margin
+        card_y1 = W - margin
+        card_x0 = card_x1 - card
+        card_y0 = card_y1 - card
+        qr_x0 = round(card_x0 + (card - qr_px) / 2)
+        qr_y0 = round(card_y0 + (card - qr_px) / 2)
+        plate_px = card
+        plate_box = (card_x0, card_y0, card_x1, card_y1)
+    elif frame:
         plate_target = p_scale * W
         cell = max(2, int((plate_target * 0.86) // n))
         qr_px = cell * n
@@ -404,12 +449,33 @@ def render(options: RenderOptions) -> RenderResult:
         opts = replace(opts, eye_style="rounded")
         fallback = True
 
-    if opts.transparent:
+    if photo_mode:
+        canvas = _photo_canvas(opts.photo, W)
+        card_mask = Image.new("L", (W, W), 0)
+        ImageDraw.Draw(card_mask).rounded_rectangle(plate_box, radius=plate_px * 0.07, fill=255)
+        canvas.alpha_composite(_shadow_layer(W, card_mask, alpha=104, blur=max(2, W // 55), offset=(0, max(2, W // 100))))
+        card_color = parse_color(qr_bg)
+        canvas.alpha_composite(
+            _rounded_layer(
+                W,
+                plate_box,
+                card_color[:3] + (opts.photo_opacity,),
+                radius=plate_px * 0.07,
+                outline_color=mix(card_color, (0, 0, 0, 255), 0.16),
+                outline_width=max(1, W // 700),
+            )
+        )
+        mask = None
+    elif opts.transparent:
         canvas = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+        mask = None
     else:
         canvas = color_image(W, outer_spec)
+        mask = None
 
-    if frame:
+    if photo_mode:
+        pass
+    elif frame:
         mask = shape_mask(opts.shape, W, ss=2)
         if opts.shadow:
             canvas.alpha_composite(_shadow_layer(W, mask, alpha=76, blur=max(2, W // 90), offset=(0, max(2, W // 120))))
@@ -575,6 +641,7 @@ def render(options: RenderOptions) -> RenderResult:
         module_px=cell / ss,
         contrast=contrast,
         masked=silhouette,
+        photo=photo_mode,
         qr_box=(round(qr_x0 / ss), round(qr_y0 / ss), round((qr_x0 + qr_px) / ss), round((qr_y0 + qr_px) / ss)),
         final_qr_fg=final_qr_fg,
         final_qr_bg=final_qr_bg,
@@ -646,9 +713,12 @@ def render_svg(options: RenderOptions) -> str:
     eye_color = parse_color(pal.accent or qr_fg_spec)
     if C.contrast_ratio(eye_color, qr_bg) < 3.5:
         eye_color = qr_fg
-    silhouette = opts.silhouette and opts.shape != "square"
+    photo_mode = opts.photo is not None
+    silhouette = opts.silhouette and opts.shape != "square" and not photo_mode
     frame = opts.frame if opts.frame is not None else (opts.shape != "square" and not silhouette)
     if opts.shape == "square" and opts.frame is None:
+        frame = False
+    if photo_mode:
         frame = False
     qr = make_qr(opts.content, error=opts.error or ("h" if (opts.logo is not None or silhouette) else "m"), border=opts.border)
     n = qr.size
@@ -657,7 +727,20 @@ def render_svg(options: RenderOptions) -> str:
     bg_paint, bg_def = _svg_paint(qr_bg_spec, "bg")
     _, shape_def = _svg_paint(shape_spec, "shape")
     outer_paint, outer_def = _svg_paint(outer_spec, "outer")
-    if silhouette:
+    if photo_mode:
+        card = S * opts.photo_card
+        cell = card * 0.86 / n
+        qr_px = cell * n
+        card = qr_px / 0.86
+        margin = S * opts.photo_inset
+        card_x1 = S - margin
+        card_y1 = S - margin
+        card_x0 = card_x1 - card
+        card_y0 = card_y1 - card
+        qx = card_x0 + (card - qr_px) / 2
+        qy = card_y0 + (card - qr_px) / 2
+        plate = None
+    elif silhouette:
         scale, center = _fit_plate(opts.shape)
         cx, cy = center[0] * S, center[1] * S
         area = scale * S * 0.86
@@ -669,7 +752,9 @@ def render_svg(options: RenderOptions) -> str:
             silhouette = False
             frame = True
         plate = None
-    if not silhouette and frame:
+    if photo_mode:
+        pass
+    elif not silhouette and frame:
         scale, center = _fit_plate(opts.shape)
         plate = scale * S
         cx, cy = center[0] * S, center[1] * S
@@ -691,11 +776,17 @@ def render_svg(options: RenderOptions) -> str:
         outer_def,
         "</defs>",
     ]
-    if not opts.transparent:
+    if photo_mode:
+        photo_image = _embedded_png(_photo_canvas(opts.photo, 1024).convert("RGB"))
+        parts.append(f'<image href="data:image/png;base64,{photo_image}" x="0" y="0" width="{S}" height="{S}"/>')
+        parts.append(
+            f'<rect x="{card_x0:.2f}" y="{card_y0:.2f}" width="{card:.2f}" height="{card:.2f}" rx="{card * 0.07:.2f}" fill="{_svg_color(qr_bg)}" fill-opacity="{opts.photo_opacity / 255:.3f}" stroke="{_svg_color(mix(qr_bg, (0, 0, 0, 255), 0.16))}" stroke-width="{max(1, S // 700)}"/>'
+        )
+    elif not opts.transparent:
         parts.append(f'<rect width="{S}" height="{S}" fill="{outer_paint}"/>')
     shape_fill = mix(parse_color(qr_bg_spec), parse_color(shape_spec), 0.07) if silhouette else None
-    effective_bg = _svg_color(shape_fill) if shape_fill is not None else bg_paint
-    if opts.shape != "square":
+    effective_bg = _svg_color(qr_bg) if photo_mode else (_svg_color(shape_fill) if shape_fill is not None else bg_paint)
+    if not photo_mode and opts.shape != "square":
         shape_image = _svg_shape_image(opts.shape, shape_fill if shape_fill is not None else shape_spec, 1024)
         parts.append(f'<image href="data:image/png;base64,{shape_image}" x="0" y="0" width="{S}" height="{S}"/>')
     if silhouette:

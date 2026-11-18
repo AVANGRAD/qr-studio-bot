@@ -53,7 +53,10 @@ def _nav(builder: InlineKeyboardBuilder, prefix: str, page: int, pages: int, ext
 
 def welcome_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="Создать QR", callback_data="menu:new"))
+    builder.row(
+        InlineKeyboardButton(text="Создать QR", callback_data="menu:new"),
+        InlineKeyboardButton(text="Фото + QR", callback_data="photo:upload"),
+    )
     builder.row(
         InlineKeyboardButton(text="Пресеты", callback_data="menu:presets"),
         InlineKeyboardButton(text="Помощь", callback_data="menu:help"),
@@ -87,6 +90,7 @@ def editor_kb(draft: Draft, webapp: bool = False) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text=f"Логотип: {logo_label}", callback_data="logo:menu"),
         InlineKeyboardButton(text=f"Размер: {draft.size}", callback_data="size:menu"),
     )
+    builder.row(InlineKeyboardButton(text=f"Фото: {'загружено' if draft.has_photo else 'нет'}", callback_data="photo:menu"))
     builder.row(
         InlineKeyboardButton(text="Пресеты", callback_data="menu:presets"),
         InlineKeyboardButton(text="Случайный стиль", callback_data="menu:random"),
@@ -187,6 +191,15 @@ def logo_menu(draft: Draft) -> InlineKeyboardMarkup:
     builder.adjust(2)
     if draft.has_logo:
         builder.row(InlineKeyboardButton(text="Убрать логотип", callback_data="logo:clear"))
+    builder.row(InlineKeyboardButton(text="К редактору", callback_data="back:editor"))
+    return builder.as_markup()
+
+
+def photo_menu(draft: Draft | None) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="Загрузить фото", callback_data="photo:upload"))
+    if draft is not None and draft.has_photo:
+        builder.row(InlineKeyboardButton(text="Убрать фото", callback_data="photo:clear"))
     builder.row(InlineKeyboardButton(text="К редактору", callback_data="back:editor"))
     return builder.as_markup()
 

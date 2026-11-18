@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, Message
 
 from ..services import ContentError, Draft, get_preset, normalize_content, rate_limiter
 from ..states import Flow
-from ..texts import NO_DRAFT, RENDER_ERROR, RESET
+from ..texts import NO_DRAFT, PHOTO_NEEDED, RENDER_ERROR, RESET
 from ..webapp_settings import apply_settings
 from .common import get_draft, send_document, send_preview
 
@@ -33,6 +33,9 @@ async def on_text(message: Message, state: FSMContext) -> None:
         await message.answer("Жду картинку-логотип: PNG, JPG или WebP до 6 МБ.")
         return
     if current == Flow.monogram.state:
+        return
+    if current == Flow.photo.state:
+        await message.answer(PHOTO_NEEDED)
         return
     if current == Flow.content.state:
         data = await state.get_data()
@@ -70,12 +73,15 @@ async def _accept_content(message: Message, state: FSMContext, raw: str) -> None
         if data.get("pending_monogram"):
             draft.logo_mode = "monogram"
             draft.logo_text = data["pending_monogram"]
+        if data.get("pending_photo"):
+            draft.photo_bytes = data["pending_photo"]
         pending_webapp = data.get("pending_webapp")
         if isinstance(pending_webapp, dict):
             apply_settings(draft, pending_webapp)
         data.pop("pending_logo", None)
         data.pop("pending_logo_mode", None)
         data.pop("pending_monogram", None)
+        data.pop("pending_photo", None)
         data.pop("pending_webapp", None)
         await state.set_data(data)
     else:
