@@ -9,11 +9,12 @@
 - Telegram-бот на aiogram: меню, FSM, превью, PNG/SVG, лимиты.
 - Шрифт Roboto с кириллицей и OFL.
 - Telegram Mini App: `/app`, каталог, превью, 105 статических плиток, `WebApp.sendData`.
-- Кнопка «Выбрать визуально» в редакторе; для групп скрыта (только private).
-- `pytest`: 29 тестов проходят.
+- Mini App доступен кнопкой меню «QR Studio», командой `/app` и кнопкой «Выбрать визуально» в редакторе; для групп скрыт (только private).
+- Настройки, выбранные до создания QR, сохраняются как `pending_webapp` и применяются к следующему тексту.
+- `pytest`: 30 тестов проходят.
 - `ruff`: без ошибок; `node --check webapp/app.js` без ошибок.
 - `scripts/check_scans.py`: 140/140 QR декодируются после правки листа и плашек.
-- GitHub: https://github.com/AVANGRAD/qr-studio-bot (public), HEAD `9199253`.
+- GitHub: https://github.com/AVANGRAD/qr-studio-bot (public), HEAD `f40c4e9`.
 - Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, deploy live.
 - `/healthz`, `/app`, `/app/catalog.json`, `/app/static/*`, `/app/thumbs/*`, `/app/preview.png` отвечают 200.
 - Webhook: pending 0, `last_error_message` пустой; бот `@QUaRc0De_bot` id `9062123985`.

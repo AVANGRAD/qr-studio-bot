@@ -19,3 +19,10 @@
 - SVG и лист: silhouette leaf переделан, лимиты плашек уменьшены.
 - `pytest` 29/29, `ruff` OK, `node --check` OK, scans 140/140.
 - Render deploy live: `9199253`; HTTP-эндпоинты Mini App проверены.
+
+## 2026-11-18 — доступ к Mini App
+
+- Установлена кнопка меню «QR Studio» (`MenuButtonWebApp`) при старте webhook-сервера.
+- Добавлена команда `/app` с inline-кнопкой открытия редактора.
+- Настройки из Mini App до создания QR сохраняются в `pending_webapp` и применяются к следующему тексту.
+- `pytest` 30/30; Render deploy `f40c4e9`.

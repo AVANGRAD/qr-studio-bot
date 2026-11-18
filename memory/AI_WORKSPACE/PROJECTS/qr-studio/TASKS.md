@@ -8,11 +8,13 @@
 - [x] PNG/SVG рендер.
 - [x] Safe-fallback для сканируемости.
 - [x] Telegram-бот и меню.
-- [x] 29 pytest-тестов.
+- [x] 30 pytest-тестов.
 - [x] 140/140 scan-регрессия после правки листа.
 - [x] GitHub-репозиторий и Render web service.
 - [x] Mini App: каталог, превью, плитки, `sendData`, handler.
 - [x] Кнопка Mini App только для private-чатов.
+- [x] Кнопка меню «QR Studio» и команда `/app`.
+- [x] Сохранение выбранных настроек до создания QR.
 - [ ] Живая проверка Telegram: открыть Mini App и применить стиль.
 
 ## Идеи
