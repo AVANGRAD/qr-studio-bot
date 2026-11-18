@@ -2,4 +2,4 @@
 
 | Проект | Путь | Статус |
 |---|---|---|
-| QR Studio Bot | `PROJECTS/qr-studio/` | Mini App доступен кнопкой меню; live-проверка в Telegram ожидается |
+| QR Studio Bot | `PROJECTS/qr-studio/` | Фото-режим задеплоен (`c5dfbe5`); live-проверка фото в Telegram ожидается |

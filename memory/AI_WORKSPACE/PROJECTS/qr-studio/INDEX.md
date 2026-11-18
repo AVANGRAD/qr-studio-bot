@@ -7,3 +7,4 @@
 - [Ошибки](ERRORS.md)
 - [Изменения](CHANGELOG.md)
 - [Итоги](summaries/2026-11-18.md)
+- [Итог: фото-режим](summaries/2026-11-18-photo.md)

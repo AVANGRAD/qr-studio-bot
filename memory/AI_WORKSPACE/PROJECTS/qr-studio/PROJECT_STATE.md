@@ -12,26 +12,30 @@
 - Mini App доступен кнопкой меню «QR Studio», командой `/app` и кнопкой «Выбрать визуально» в редакторе; для групп скрыт (только private).
 - Настройки, выбранные до создания QR, сохраняются как `pending_webapp` и применяются к следующему тексту.
 - QR встроен в силуэт: `Draft.silhouette=True`, Mini App thumbnails/preview используют `silhouette` для не-square форм; убрана квадратная светлая плашка, добавлены тинт, рант, тень и декор. 32 из 43 не-square силуэтов рендерятся без плашки; 11 сложных форм безопасно откатываются в frame с предупреждением.
-- Статические плитки пересобраны; catalog/thumbnail URL с cache-bust `?v=figure2`, preview отдаётся с `no-store`.
-- `pytest`: 32 теста проходят.
+- Добавлен фото-режим: фото полностью вписывается в квадрат, фон — размытая cover-копия; QR размещается на светлой карточке 42% справа снизу (`photo_inset=0.055`, `photo_opacity=244`), поэтому фото остаётся видимым вокруг карточки.
+- Фото-поддержка есть в PNG и SVG; форма/silhouette в фото-режиме игнорируются. Добавлены `Draft.photo_bytes`, `prepare_uploaded_photo`, `Flow.photo`, handler `bot/handlers/photo.py`, кнопка «Фото» в редакторе и «Фото + QR» на старте; фото можно прислать до создания QR.
+- В фото-режиме принимаются Telegram photo или image-document PNG/JPG/WebP до 12 МБ; изображение EXIF-поворачивается и уменьшается до 1600 px по длинной стороне.
+- `pytest`: 38 тестов проходят.
 - `ruff`: без ошибок; `node --check webapp/app.js` без ошибок.
-- `scripts/check_scans.py`: 184/184 QR декодируются, включая все 44 формы в figure-режиме.
-- GitHub: https://github.com/AVANGRAD/qr-studio-bot (public), HEAD `70b4d8d`.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, deploy `70b4d8d` live.
-- `/healthz`, `/app`, `/app/catalog.json`, `/app/static/*`, `/app/thumbs/*`, `/app/preview.png` отвечают 200; live preview с leaf декодируется jsQR.
-- Webhook: pending 0, `last_error_message` пустой; бот `@QUaRc0De_bot` id `9062123985`; menu button «QR Studio» ведёт на `/app`.
+- `scripts/check_scans.py`: 187/187 QR декодируются, включая все 44 формы в figure-режиме и 3 фото-сценария.
+- GitHub: https://github.com/AVANGRAD/qr-studio-bot (public), feature-коммит `c5dfbe5`.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, deploy `c5dfbe5` live.
+- `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; webhook pending 0, `last_error_message` пустой; бот `@QUaRc0De_bot` id `9062123985`; menu button «QR Studio» ведёт на `/app`.
 
 ## Осталось
 
-- Проверить живым сообщением в Telegram: `/start` → редактор → «Выбрать визуально» → применить настройки и убедиться, что QR в фигуре выглядит ожидаемо.
-- Решить, нужен ли пользователю UI-переключатель «в фигуре / с плашкой»; сейчас figure-режим включён по умолчанию.
-- При необходимости добавить скриншоты/примеры Mini App в README.
+- Проверить живым сообщением в Telegram: отправить фото, получить превью, скачать PNG и проверить сканирование камерой; отдельно проверить фото + логотип.
+- Проверить `/start` → «Фото + QR» → фото → текст, а также фото-первый сценарий без предварительного draft.
+- Проверить, что фото-карточка не закрывает важный объект; при необходимости изменить `photo_card`/`photo_inset`.
+- Решить, нужен ли UI-переключатель «в фигуре / с плашкой»; сейчас figure-режим включён по умолчанию.
+- При необходимости добавить скриншоты/примеры Mini App и фото-режима в README.
 
 ## Известные ограничения
 
-- SVG: силуэты и логотип — встроенный PNG, модули QR — вектор.
-- Лимит 1200 символов и 2048 px.
+- SVG: силуэты и логотип — встроенный PNG, модули QR — вектор; фото также встроено PNG.
+- Лимит 1200 символов и 2048 px; логотип до 6 МБ, фото до 12 МБ.
+- В фото-режиме фото уменьшается до 1600 px; итоговый QR-код в PNG/SVG остаётся векторным (модули), фото — растровое.
 - Free Render засыпает; self-ping 600 с; первый запуск после сна около минуты.
-- Mini App требует HTTPS и открывается внутри Telegram.
+- Mini App требует HTTPS и открывается внутри Telegram; загрузка фото в Mini App не поддерживается, фото-режим доступен в боте.
 - Статические плитки нужно пересобирать после изменения каталога: `python scripts/build_miniapp_thumbs.py`.
 - 11 сложных силуэтов (`moon`, `snowflake`, `wave`, `fox`, `ladybug`, `turtle`, `penguin`, `mask`, `rocket`, `guitar`, `pumpkin`) используют безопасную плашку: центральный квадрат QR задевает вырезы/края. Это осознанный fallback, не ошибка рендера.

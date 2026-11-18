@@ -36,3 +36,13 @@
 - 105 плиток пересобраны; добавлен cache-bust `?v=figure2`, preview — `no-store`.
 - `pytest` 32/32, `ruff` OK, `node --check` OK, scans 184/184.
 - Render deploy `70b4d8d` live; live leaf preview декодируется jsQR.
+
+## 2026-11-18 — фото-режим
+
+- `RenderOptions` получил `photo`, `photo_card`, `photo_inset`, `photo_opacity`; `RenderResult.photo`.
+- Добавлен `_photo_canvas`: полное фото + размытый затемнённый cover-фон; QR на светлой скруглённой карточке справа снизу.
+- PNG/SVG фото-режим; фото в SVG встраивается PNG, модули остаются векторными.
+- `Draft.photo_bytes`, `prepare_uploaded_photo` (12 МБ, EXIF, 1600 px), `Flow.photo`, `bot/handlers/photo.py`.
+- Кнопки «Фото + QR» на старте и «Фото» в редакторе; фото можно загрузить до текста, удалить и заменить.
+- `pytest` 38/38, `ruff` OK, scans 187/187; feature-коммит `c5dfbe5`.
+- Render deploy `c5dfbe5` live; `/healthz`, `/app`, catalog и preview 200; webhook pending 0.

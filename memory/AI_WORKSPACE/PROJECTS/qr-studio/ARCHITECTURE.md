@@ -18,14 +18,15 @@
 - `bot/config.py` — настройки из env.
 - `bot/services.py` — Draft, валидация, рендер, rate limit, caption.
 - `bot/keyboards.py`, `bot/texts.py`, `bot/states.py` — UI и FSM.
-- `bot/handlers/` — start, create, settings, menu, logo, common.
+- `bot/handlers/` — start, create, settings, menu, logo, photo, common.
 - `bot/errors.py` — глобальный error handler.
 
 ## Рендер
 
 1. Нормализация опций и палитры; проверка контраста.
 2. Построение QR с учётом логотипа/силуэта (ECC H при риске).
-3. Маска силуэта, рамка/плашка или figure-режим: QR внутри силуэта, тинт/рант/тень, безопасный fallback в рамку.
-4. Слой модулей, глаз и alignment; overlay-безопасные стили.
-5. Логотип: plate/knockout/texture/background/corner/monogram.
-6. Downscale и предупреждения о мелких модулях.
+3. Маска силуэта, рамка/плашка, figure-режим или фото-режим: QR внутри силуэта/на карточке, тинт/рант/тень, безопасный fallback в рамку.
+4. Фото-режим: полное фото + размытый cover-фон, светлая карточка QR справа снизу; shape/silhouette/frame отключаются.
+5. Слой модулей, глаз и alignment; overlay-безопасные стили.
+6. Логотип: plate/knockout/texture/background/corner/monogram.
+7. Downscale и предупреждения о мелких модулях.
