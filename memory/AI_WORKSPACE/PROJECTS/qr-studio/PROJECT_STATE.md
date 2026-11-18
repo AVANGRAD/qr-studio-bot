@@ -19,7 +19,7 @@
 - `ruff`: без ошибок; `node --check webapp/app.js` без ошибок.
 - `scripts/check_scans.py`: 187/187 QR декодируются, включая все 44 формы в figure-режиме и 3 фото-сценария.
 - GitHub: https://github.com/AVANGRAD/qr-studio-bot (public), feature-коммит `c5dfbe5`.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, deploy `c5dfbe5` live.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, deploy `b78954e` (код `c5dfbe5`) live.
 - `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; webhook pending 0, `last_error_message` пустой; бот `@QUaRc0De_bot` id `9062123985`; menu button «QR Studio» ведёт на `/app`.
 
 ## Осталось

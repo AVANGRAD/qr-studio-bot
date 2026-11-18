@@ -45,4 +45,4 @@
 - `Draft.photo_bytes`, `prepare_uploaded_photo` (12 МБ, EXIF, 1600 px), `Flow.photo`, `bot/handlers/photo.py`.
 - Кнопки «Фото + QR» на старте и «Фото» в редакторе; фото можно загрузить до текста, удалить и заменить.
 - `pytest` 38/38, `ruff` OK, scans 187/187; feature-коммит `c5dfbe5`.
-- Render deploy `c5dfbe5` live; `/healthz`, `/app`, catalog и preview 200; webhook pending 0.
+- Feature deploy `c5dfbe5` live; docs-коммит `b78954e`; `/healthz`, `/app`, catalog и preview 200; webhook pending 0.
