@@ -14,9 +14,9 @@
 
 ## В работе
 
-- [ ] GitHub-репозиторий.
-- [ ] Render web service.
-- [ ] Проверка Telegram после деплоя.
+- [x] GitHub-репозиторий.
+- [x] Render web service.
+- [ ] Проверка Telegram после деплоя живым сообщением.
 
 ## Идеи
 

@@ -17,3 +17,15 @@
 - Причина: слишком агрессивные формы глаз/модулей и крупный угловой логотип.
 - Исправление: safe-base + overlay, лимит углового логотипа 0.105.
 - Проверка: 140/140.
+
+## 2026-11-18 — webhook: Cannot run the event loop while another loop is running
+
+- Причина: `web.run_app()` вызывался внутри `asyncio.run()`.
+- Исправление: `AppRunner` + `TCPSite` внутри уже работающего loop.
+- Проверка: Render deploy live, `/healthz` 200.
+
+## 2026-11-18 — secret token contains illegal characters
+
+- Причина: Render `generateValue` выдал секрет с недопустимыми для Telegram символами.
+- Исправление: hex-секрет + нормализация секрета в `Settings`.
+- Проверка: webhook установлен, `last_error_message` пустой.

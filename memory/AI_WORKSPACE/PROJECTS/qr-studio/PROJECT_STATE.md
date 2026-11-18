@@ -12,12 +12,13 @@
 - `ruff`: без ошибок.
 - `scripts/check_scans.py`: 140/140 QR декодируются.
 - Polling-запуск проверен: бот подключается к Telegram.
+- GitHub: https://github.com/AVANGRAD/qr-studio-bot (public).
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, деплой live.
+- `/healthz` отвечает 200; webhook установлен, ошибок Telegram нет.
 
 ## Осталось
 
-- Создать GitHub-репозиторий и запушить код.
-- Создать Render web service и проверить `/healthz`.
-- Проверить сценарий в Telegram после деплоя.
+- Проверить сценарий живым сообщением в Telegram.
 - Добавить скриншоты/примеры в README при необходимости.
 
 ## Известные ограничения

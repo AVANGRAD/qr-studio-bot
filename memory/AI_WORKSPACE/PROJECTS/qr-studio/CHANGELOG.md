@@ -8,3 +8,4 @@
 - Добавлены pytest-тесты и jsQR-регрессия.
 - Исправлены SVG, `colorize_mask`, safe-стили и монограммы.
 - Локальные проверки: ruff OK, pytest 23/23, scans 140/140.
+- Опубликован GitHub-репозиторий и Render web service; webhook установлен.
