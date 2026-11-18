@@ -18,6 +18,10 @@ def get_draft(data: dict) -> Draft | None:
     return Draft.from_data(data)
 
 
+def _webapp_enabled(chat: object) -> bool:
+    return getattr(chat, "type", "private") == "private"
+
+
 async def _preview_payload(draft: Draft, size: int) -> tuple[BufferedInputFile, str]:
     png, result = await run_render(png_bytes, draft, size)
     return BufferedInputFile(png, filename="qr-preview.png"), caption(draft, result)
@@ -25,7 +29,7 @@ async def _preview_payload(draft: Draft, size: int) -> tuple[BufferedInputFile, 
 
 async def send_preview(message: Message, state: FSMContext, draft: Draft, size: int = 640) -> None:
     photo, text = await _preview_payload(draft, min(size, max(512, draft.size)))
-    sent = await message.answer_photo(photo=photo, caption=text, reply_markup=editor_kb(draft), parse_mode=ParseMode.HTML)
+    sent = await message.answer_photo(photo=photo, caption=text, reply_markup=editor_kb(draft, webapp=_webapp_enabled(getattr(message, "chat", None))), parse_mode=ParseMode.HTML)
     data = await state.get_data()
     data["draft"] = draft.to_data()
     data["preview_mid"] = sent.message_id
@@ -36,14 +40,14 @@ async def edit_preview(callback: CallbackQuery, state: FSMContext, draft: Draft,
     photo, text = await _preview_payload(draft, min(size, max(512, draft.size)))
     media = InputMediaPhoto(media=photo, caption=text, parse_mode=ParseMode.HTML)
     try:
-        await callback.message.edit_media(media, reply_markup=editor_kb(draft))
+        await callback.message.edit_media(media, reply_markup=editor_kb(draft, webapp=_webapp_enabled(getattr(callback.message, "chat", None))))
         message_id = callback.message.message_id
     except TelegramBadRequest as exc:
         logger.debug("edit_media failed: %s", exc)
         sent = await callback.message.answer_photo(
             photo=photo,
             caption=text,
-            reply_markup=editor_kb(draft),
+            reply_markup=editor_kb(draft, webapp=_webapp_enabled(getattr(callback.message, "chat", None))),
             parse_mode=ParseMode.HTML,
         )
         message_id = sent.message_id

@@ -68,7 +68,7 @@ def help_kb() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def editor_kb(draft: Draft) -> InlineKeyboardMarkup:
+def editor_kb(draft: Draft, webapp: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     logo_label = "нет"
     if draft.logo_mode == "monogram":
@@ -91,7 +91,8 @@ def editor_kb(draft: Draft) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="Пресеты", callback_data="menu:presets"),
         InlineKeyboardButton(text="Случайный стиль", callback_data="menu:random"),
     )
-    builder.row(InlineKeyboardButton(text="Выбрать визуально", web_app=WebAppInfo(url=webapp_url(draft))))
+    if webapp:
+        builder.row(InlineKeyboardButton(text="Выбрать визуально", web_app=WebAppInfo(url=webapp_url(draft))))
     builder.row(
         InlineKeyboardButton(text="Скачать PNG", callback_data="dl:png"),
         InlineKeyboardButton(text="Скачать SVG", callback_data="dl:svg"),
