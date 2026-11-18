@@ -33,6 +33,9 @@ def test_callback_data_fits_telegram_limit() -> None:
     for markup in _markups():
         for row in markup.inline_keyboard:
             for button in row:
+                if button.web_app is not None:
+                    assert button.web_app.url.startswith("https://")
+                    continue
                 assert button.callback_data
                 assert len(button.callback_data.encode("utf-8")) <= 64, button.callback_data
 
@@ -40,3 +43,5 @@ def test_callback_data_fits_telegram_limit() -> None:
 def test_editor_has_downloads() -> None:
     callbacks = {button.callback_data for row in editor_kb(Draft(content="x")).inline_keyboard for button in row}
     assert {"dl:png", "dl:svg", "shape:menu", "pal:menu:0"}.issubset(callbacks)
+    web_apps = [button.web_app for row in editor_kb(Draft(content="x")).inline_keyboard for button in row if button.web_app]
+    assert web_apps and web_apps[0].url.startswith("https://")

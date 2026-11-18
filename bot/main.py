@@ -14,7 +14,8 @@ from aiohttp import ClientSession, web
 
 from .config import Settings
 from .errors import error_handler
-from .handlers import create, logo, menu, settings, start
+from .handlers import create, logo, menu, settings, start, webapp
+from .miniapp import setup as setup_miniapp
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("aiogram.event").setLevel(logging.WARNING)
@@ -40,6 +41,7 @@ def build() -> tuple[Bot, Dispatcher, Settings]:
     bot = Bot(token=cfg.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(start.router)
+    dp.include_router(webapp.router)
     dp.include_router(logo.router)
     dp.include_router(create.router)
     dp.include_router(menu.router)
@@ -80,6 +82,7 @@ async def run_webhook(bot: Bot, dp: Dispatcher, settings: Settings) -> None:
     app = web.Application()
     app.router.add_get("/", health)
     app.router.add_get("/healthz", health)
+    setup_miniapp(app)
     SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=settings.webhook_secret).register(app, path=path)
     setup_application(app, dp, bot=bot)
 

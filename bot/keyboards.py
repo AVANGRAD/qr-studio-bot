@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from qrstudio.eyes import eye_keys, eye_name
@@ -8,7 +8,7 @@ from qrstudio.masks import SHAPE_CATEGORIES, shape_name
 from qrstudio.presets import PALETTES, PRESETS, get_palette, get_preset
 from qrstudio.shapes import MODULE_STYLES, style_name
 
-from .services import Draft
+from .services import Draft, webapp_url
 
 CATEGORY_LABELS = {
     "Геометрия": "Геометрия",
@@ -91,6 +91,7 @@ def editor_kb(draft: Draft) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="Пресеты", callback_data="menu:presets"),
         InlineKeyboardButton(text="Случайный стиль", callback_data="menu:random"),
     )
+    builder.row(InlineKeyboardButton(text="Выбрать визуально", web_app=WebAppInfo(url=webapp_url(draft))))
     builder.row(
         InlineKeyboardButton(text="Скачать PNG", callback_data="dl:png"),
         InlineKeyboardButton(text="Скачать SVG", callback_data="dl:svg"),

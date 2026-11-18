@@ -14,6 +14,7 @@ Telegram-бот `@QUaRc0De_bot`: превращает ссылку или тек
 - PNG до 2048 px с DPI 300 и SVG для печати.
 - Проверка контраста и безопасные fallback-стили, чтобы QR оставался читаемым.
 - Русский интерфейс, подсказки и предупреждения о рисках сканирования.
+- Визуальный редактор в Telegram Mini App: превью и плитки вариантов вместо текстовых списков.
 
 ## Стек
 
@@ -43,7 +44,7 @@ BOT_MODE=polling python -m bot.main
 | `BOT_TOKEN` | — | Токен Telegram-бота, обязателен |
 | `BOT_MODE` | `webhook` | `webhook` или `polling` |
 | `WEBHOOK_BASE_URL` | `RENDER_EXTERNAL_URL` | Публичный HTTPS-адрес сервиса |
-| `WEBHOOK_SECRET` | hash токена | Секрет заголовка `X-Telegram-Bot-Api-Secret-Token` |
+| `WEBHOOK_SECRET` | hash токена | Hex-секрет заголовка `X-Telegram-Bot-Api-Secret-Token`; можно не задавать |
 | `SELF_PING_INTERVAL_SECONDS` | `600` | Пинг `/healthz`, чтобы free-сервис не засыпал |
 | `ADMIN_ID` | — | Telegram ID администратора |
 | `MAX_CONTENT_LENGTH` | `1200` | Максимум символов в QR |
@@ -56,11 +57,23 @@ BOT_MODE=polling python -m bot.main
 В репозитории есть `render.yaml` (free web service, Frankfurt, health check `/healthz`).
 
 1. Создай Blueprint или Web Service из репозитория.
-2. Укажи `BOT_TOKEN`; `WEBHOOK_SECRET` Render сгенерирует сам.
+2. Укажи `BOT_TOKEN`; `WEBHOOK_SECRET` можно не задавать — он будет вычислен из токена. Если задаёшь вручную, используй только hex (без спецсимволов), иначе Telegram отклонит webhook.
 3. `WEBHOOK_BASE_URL` подхватится из `RENDER_EXTERNAL_URL`.
-4. После деплоя открой `https://<service>.onrender.com/healthz`.
+4. После деплоя открой `https://<service>.onrender.com/healthz` и `/app`.
 
 Free-план засыпает без трафика. Бот пингует себя раз в 10 минут; первый запуск после сна занимает около минуты.
+
+## Визуальный редактор (Mini App)
+
+В редакторе профиля есть кнопка «Выбрать визуально». Она открывает `https://<service>.onrender.com/app` внутри Telegram. Превью и плитки формируются на том же aiohttp-сервере; выбор отправляется в бота через `WebApp.sendData`.
+
+Статические плитки лежат в `webapp/thumbs/`. После изменения форм или стилей пересобери их:
+
+```bash
+python scripts/build_miniapp_thumbs.py
+```
+
+Mini App работает в webhook-режиме; в polling-режиме кнопка ведёт на публичный Render-адрес. Статика и шаблоны находятся в `webapp/`.
 
 ## Проверки
 
@@ -77,8 +90,8 @@ python scripts/check_scans.py
 ```
 qrstudio/   генерация QR, формы, глаза, палитры, рендер PNG/SVG
 bot/        aiogram-бот: меню, FSM, лимиты, превью
-scripts/    регрессия сканирования
-tests/      pytest и jsQR-декодер
+scripts/    регрессия сканирования и сборка плиток Mini App
+webapp/     HTML/CSS/JS Mini App и статические плитки
 assets/     шрифт Roboto и лицензия OFL
 memory/     рабочая память проекта
 ```
@@ -88,4 +101,5 @@ memory/     рабочая память проекта
 - Максимум 1200 символов и 2048 px.
 - Логотип до 6 МБ (жёсткий лимит загрузки — 8 МБ).
 - В SVG силуэты и логотип встраиваются как PNG, а модули QR остаются векторными. Это сохраняет точное совпадение с PNG.
+- Mini App требует HTTPS. В локальном polling-режиме кнопка использует публичный адрес сервиса, а не localhost.
 - При мелких модулях бот автоматически упрощает слишком детальный узор и предупреждает об этом.

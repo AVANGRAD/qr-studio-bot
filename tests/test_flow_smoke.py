@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from aiogram.types import User
 
-from bot.handlers import create, logo, settings
+from bot.handlers import create, logo, settings, webapp
 from bot.services import Draft
 from bot.states import Flow
 
@@ -37,6 +37,7 @@ class FakeMessage:
         self.message_id = 100
         self.from_user = User(id=42, is_bot=False, first_name="Test")
         self.text = ""
+        self.web_app_data = None
         self.answers: list[tuple] = []
         self.photos: list[dict] = []
         self.documents: list[dict] = []
@@ -133,3 +134,28 @@ async def test_download_png() -> None:
     assert callback.message.documents
     document = callback.message.documents[0]["document"]
     assert document.data.startswith(b"\x89PNG")
+
+
+@pytest.mark.asyncio
+async def test_webapp_applies_settings() -> None:
+    state = FakeState()
+    message = FakeMessage()
+    message.text = "https://example.com"
+    await create.on_text(message, state)
+    message.web_app_data = SimpleNamespace(data='{"shape":"leaf","module_style":"dot","eye_style":"circle","palette":"wood","size":512}')
+    await webapp.on_web_app_data(message, state)
+    draft = Draft.from_data(await state.get_data())
+    assert draft is not None
+    assert draft.shape == "leaf"
+    assert draft.palette == "wood"
+    assert draft.size == 512
+    assert message.photos
+
+
+@pytest.mark.asyncio
+async def test_webapp_rejects_bad_payload() -> None:
+    state = FakeState()
+    message = FakeMessage()
+    message.web_app_data = SimpleNamespace(data="not-json")
+    await webapp.on_web_app_data(message, state)
+    assert message.answers

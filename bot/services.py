@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 import html
 import io
+import os
 import time
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from PIL import Image, UnidentifiedImageError
 
@@ -115,6 +116,22 @@ def svg_bytes(draft: Draft) -> str:
 def short(text: str, limit: int = 120) -> str:
     clean = " ".join(text.split())
     return clean if len(clean) <= limit else clean[: limit - 1] + "…"
+
+
+def webapp_url(draft: Draft) -> str:
+    base = (os.getenv("WEBHOOK_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "https://qr-studio-bot.onrender.com").rstrip("/")
+    if not base.startswith("https://"):
+        base = "https://qr-studio-bot.onrender.com"
+    query = urlencode(
+        {
+            "shape": draft.shape,
+            "module": draft.module_style,
+            "eye": draft.eye_style,
+            "palette": draft.palette,
+            "size": draft.size,
+        }
+    )
+    return f"{base}/app?{query}"
 
 
 def caption(draft: Draft, result: RenderResult | None = None) -> str:
