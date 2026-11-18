@@ -2,4 +2,4 @@
 
 | Проект | Путь | Статус |
 |---|---|---|
-| QR Studio Bot | `PROJECTS/qr-studio/` | В разработке, локальные проверки пройдены |
+| QR Studio Bot | `PROJECTS/qr-studio/` | Mini App задеплоен; live-проверка в Telegram ожидается |

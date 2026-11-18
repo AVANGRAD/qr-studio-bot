@@ -29,3 +29,9 @@
 - Причина: Render `generateValue` выдал секрет с недопустимыми для Telegram символами.
 - Исправление: hex-секрет + нормализация секрета в `Settings`.
 - Проверка: webhook установлен, `last_error_message` пустой.
+
+## 2026-11-18 — AttributeError: FakeMessage has no attribute chat
+
+- Причина: после ограничения Mini App private-чатами `common.send_preview` напрямую читал `message.chat`, а тестовый FakeMessage его не имел.
+- Исправление: `getattr(message, "chat", None)` и проверка типа с fallback `private`.
+- Проверка: pytest 29/29.
