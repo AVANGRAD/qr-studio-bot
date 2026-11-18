@@ -4,20 +4,22 @@ import json
 import logging
 
 from aiogram import F, Router
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+    WebAppInfo,
+)
 
-from qrstudio.eyes import eye_keys
-from qrstudio.masks import SHAPES
-from qrstudio.presets import PALETTES, get_preset
-from qrstudio.shapes import MODULE_STYLES
-
+from ..services import webapp_entry_url, webapp_url
 from ..states import Flow
+from ..webapp_settings import apply_settings, sanitize_settings
 from .common import get_draft, send_preview
 
 router = Router(name="webapp")
 logger = logging.getLogger(__name__)
-SIZES = {512, 1024, 2048}
 
 
 @router.message(F.web_app_data)
@@ -33,50 +35,33 @@ async def on_web_app_data(message: Message, state: FSMContext) -> None:
         return
     draft = get_draft(await state.get_data())
     if draft is None:
+        pending = sanitize_settings(payload)
+        if not pending:
+            await message.answer("Не удалось прочитать настройки. Попробуй выбрать другой вариант.")
+            return
+        data = await state.get_data()
+        data["pending_webapp"] = pending
+        await state.set_data(data)
         await state.set_state(Flow.content)
-        await message.answer("Сначала пришли ссылку или текст для QR, потом открой визуальный редактор.")
+        await message.answer("Настройки сохранены. Пришли ссылку или текст — применю их.")
         return
 
-    changed = False
-    preset_key = payload.get("preset")
-    if preset_key:
-        try:
-            preset = get_preset(preset_key)
-        except KeyError:
-            preset = None
-        if preset is not None:
-            draft.shape = preset.shape
-            draft.module_style = preset.module_style
-            draft.eye_style = preset.eye_style
-            draft.palette = preset.palette
-            changed = True
-
-    shape = payload.get("shape")
-    if isinstance(shape, str) and shape in SHAPES:
-        draft.shape = shape
-        changed = True
-    module = payload.get("module_style")
-    if isinstance(module, str) and module in MODULE_STYLES:
-        draft.module_style = module
-        changed = True
-    eye = payload.get("eye_style")
-    if isinstance(eye, str) and eye in eye_keys():
-        draft.eye_style = eye
-        changed = True
-    palette = payload.get("palette")
-    if isinstance(palette, str) and palette in PALETTES:
-        draft.palette = palette
-        changed = True
-    size = payload.get("size")
-    try:
-        size_value = int(size)
-    except (TypeError, ValueError):
-        size_value = 0
-    if size_value in SIZES:
-        draft.size = size_value
-        changed = True
-
-    if not changed:
+    if not apply_settings(draft, payload):
         await message.answer("Настройки не изменились. Попробуй выбрать другой вариант.")
         return
     await send_preview(message, state, draft, size=640)
+
+
+@router.message(Command("app"))
+async def open_app(message: Message, state: FSMContext) -> None:
+    if getattr(message.chat, "type", "private") != "private":
+        await message.answer("Визуальный редактор доступен в личном чате с ботом.")
+        return
+    draft = get_draft(await state.get_data())
+    url = webapp_url(draft) if draft is not None else webapp_entry_url()
+    await message.answer(
+        "Открой визуальный редактор:",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="Открыть редактор", web_app=WebAppInfo(url=url))]]
+        ),
+    )

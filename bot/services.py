@@ -118,10 +118,19 @@ def short(text: str, limit: int = 120) -> str:
     return clean if len(clean) <= limit else clean[: limit - 1] + "…"
 
 
-def webapp_url(draft: Draft) -> str:
+def webapp_base_url() -> str:
     base = (os.getenv("WEBHOOK_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "https://qr-studio-bot.onrender.com").rstrip("/")
     if not base.startswith("https://"):
         base = "https://qr-studio-bot.onrender.com"
+    return base
+
+
+def webapp_entry_url() -> str:
+    return f"{webapp_base_url()}/app"
+
+
+def webapp_url(draft: Draft) -> str:
+    base = webapp_base_url()
     query = urlencode(
         {
             "shape": draft.shape,

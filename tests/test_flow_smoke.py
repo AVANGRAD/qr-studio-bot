@@ -159,3 +159,22 @@ async def test_webapp_rejects_bad_payload() -> None:
     message.web_app_data = SimpleNamespace(data="not-json")
     await webapp.on_web_app_data(message, state)
     assert message.answers
+
+
+@pytest.mark.asyncio
+async def test_webapp_pending_applied_to_next_content() -> None:
+    state = FakeState()
+    message = FakeMessage()
+    message.web_app_data = SimpleNamespace(data='{"shape":"leaf","module_style":"dot","eye_style":"circle","palette":"wood","size":512}')
+    await webapp.on_web_app_data(message, state)
+    assert not message.photos
+    assert state.state == Flow.content
+    message.text = "https://example.com"
+    message.web_app_data = None
+    await create.on_text(message, state)
+    draft = Draft.from_data(await state.get_data())
+    assert draft is not None
+    assert draft.shape == "leaf"
+    assert draft.palette == "wood"
+    assert draft.size == 512
+    assert message.photos
