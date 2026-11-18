@@ -96,7 +96,15 @@ async def run_webhook(bot: Bot, dp: Dispatcher, settings: Settings) -> None:
             _ = asyncio.create_task(self_ping(settings.webhook_base_url + "/healthz", settings.self_ping_interval))
 
     app.on_startup.append(on_startup)
-    web.run_app(app, host="0.0.0.0", port=settings.port, print=None)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", settings.port)
+    await site.start()
+    logger.info("web server started on port %s", settings.port)
+    try:
+        await asyncio.Event().wait()
+    finally:
+        await runner.cleanup()
 
 
 async def run_polling(bot: Bot, dp: Dispatcher) -> None:
