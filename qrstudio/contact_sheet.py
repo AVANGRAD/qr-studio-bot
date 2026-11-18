@@ -60,7 +60,7 @@ def shape_sheet(path: str | Path = "assets/previews/shapes.png", size: int = 300
         path,
         lambda key: shape_name(key),
         lambda key, result: f"{key} · v{result.qr.version} · {result.module_px:.1f}px",
-        lambda key: RenderOptions(content="https://example.com", size=size, shape=key, module_style="dot", eye_style="circle", palette="blue"),
+        lambda key: RenderOptions(content="https://example.com", size=size, shape=key, module_style="dot", eye_style="circle", palette="blue", silhouette=key != "square"),
         size=size,
         columns=8,
     )

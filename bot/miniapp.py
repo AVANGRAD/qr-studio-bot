@@ -28,7 +28,7 @@ PRESET_KEYS = set(PRESETS)
 
 
 def _card(kind: str, key: str, name: str, **extra) -> dict:
-    return {"key": key, "name": name, "thumb": f"/app/thumbs/{kind}/{key}.png", **extra}
+    return {"key": key, "name": name, "thumb": f"/app/thumbs/{kind}/{key}.png?v=figure2", **extra}
 
 
 def catalog() -> dict:
@@ -72,7 +72,7 @@ def _options(kind: str, key: str) -> RenderOptions:
     if kind == "shape":
         if key not in SHAPE_KEYS:
             raise KeyError(key)
-        return RenderOptions(content=SAMPLE, shape=key, module_style="dot", eye_style="circle", palette="blue", size=THUMB_SIZE)
+        return RenderOptions(content=SAMPLE, shape=key, module_style="dot", eye_style="circle", palette="blue", size=THUMB_SIZE, silhouette=key != "square")
     if kind == "module":
         if key not in MODULE_KEYS:
             raise KeyError(key)
@@ -96,6 +96,7 @@ def _options(kind: str, key: str) -> RenderOptions:
             eye_style=preset.eye_style,
             palette=preset.palette,
             size=THUMB_SIZE,
+            silhouette=preset.shape != "square",
         )
     raise KeyError(kind)
 
@@ -122,6 +123,7 @@ def preview_bytes(shape: str, module: str, eye: str, palette: str, size: int) ->
             eye_style=eye,
             palette=palette,
             size=max(280, min(size, 640)),
+            silhouette=shape != "square",
         )
     )
     buffer = io.BytesIO()
@@ -134,7 +136,7 @@ async def index(_: web.Request) -> web.StreamResponse:
 
 
 async def catalog_handler(_: web.Request) -> web.Response:
-    return web.json_response(catalog(), dumps=lambda value: json.dumps(value, ensure_ascii=False))
+    return web.json_response(catalog(), dumps=lambda value: json.dumps(value, ensure_ascii=False), headers={"Cache-Control": "no-cache"})
 
 
 async def thumb_handler(request: web.Request) -> web.Response:
@@ -161,7 +163,7 @@ async def preview_handler(request: web.Request) -> web.Response:
         query.get("palette", "blue"),
         size,
     )
-    return web.Response(body=payload, content_type="image/png", headers={"Cache-Control": "public, max-age=3600"})
+    return web.Response(body=payload, content_type="image/png", headers={"Cache-Control": "no-store"})
 
 
 def setup(app: web.Application) -> None:

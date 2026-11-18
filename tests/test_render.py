@@ -81,3 +81,16 @@ def test_png_dpi() -> None:
     dpi = image.info.get("dpi")
     assert dpi is not None
     assert abs(dpi[0] - 300) < 1
+
+
+def test_figure_mode_wraps_qr_in_shape() -> None:
+    result = render(RenderOptions(content="https://example.com", shape="leaf", silhouette=True, size=512))
+    assert result.masked is True
+    assert not result.fallback
+    assert result.image.size == (512, 512)
+
+
+def test_draft_defaults_to_figure_mode() -> None:
+    from bot.services import Draft
+
+    assert Draft(content="https://example.com").silhouette is True

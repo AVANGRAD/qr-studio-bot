@@ -153,10 +153,10 @@ def _finder_coverage(mask: Image.Image, qr: QR, x0: int, y0: int, cell: float) -
     for rx, ry in qr.finder_regions():
         for yy in range(7):
             for xx in range(7):
-                px = x0 + (rx + xx + 0.5) * cell
-                py = y0 + (ry + yy + 0.5) * cell
+                px = round(x0 + (rx + xx + 0.5) * cell)
+                py = round(y0 + (ry + yy + 0.5) * cell)
                 points += 1
-                if 0 <= px < mask.width and 0 <= py < mask.height and mask.getpixel((round(px), round(py))) > 200:
+                if 0 <= px < mask.width and 0 <= py < mask.height and mask.getpixel((px, py)) > 200:
                     inside += 1
     return inside / points if points else 0.0
 
@@ -167,19 +167,22 @@ def _data_coverage(mask: Image.Image, qr: QR, x0: int, y0: int, cell: float) -> 
     for x, y in qr.dark_modules():
         if qr.module_type(x, y) in FINDER_TYPES or qr.module_type(x, y) in ALIGNMENT_TYPES:
             continue
-        px = x0 + (x + 0.5) * cell
-        py = y0 + (y + 0.5) * cell
+        px = round(x0 + (x + 0.5) * cell)
+        py = round(y0 + (y + 0.5) * cell)
         total += 1
-        if 0 <= px < mask.width and 0 <= py < mask.height and mask.getpixel((round(px), round(py))) > 160:
+        if 0 <= px < mask.width and 0 <= py < mask.height and mask.getpixel((px, py)) > 160:
             inside += 1
     return inside / total if total else 1.0
 
 
-def silhouette_safe(shape: str, qr: QR, canvas: int, cell: float, x0: int, y0: int) -> tuple[bool, float, float]:
-    mask = shape_mask(shape, canvas, ss=2)
+def _safe_in_mask(mask: Image.Image, qr: QR, cell: float, x0: int, y0: int) -> tuple[bool, float, float]:
     finder = _finder_coverage(mask, qr, x0, y0, cell)
     data = _data_coverage(mask, qr, x0, y0, cell)
     return finder >= 0.995 and data >= 0.78, finder, data
+
+
+def silhouette_safe(shape: str, qr: QR, canvas: int, cell: float, x0: int, y0: int) -> tuple[bool, float, float]:
+    return _safe_in_mask(shape_mask(shape, canvas, ss=2), qr, cell, x0, y0)
 
 
 def _draw_shape_decor(canvas: Image.Image, shape: str, size: int, accent: C.RGBA, mask: Image.Image) -> None:
@@ -353,10 +356,12 @@ def render(options: RenderOptions) -> RenderResult:
         qr_y0 = round(cy - qr_px / 2)
         plate_box = (cx - plate_px / 2, cy - plate_px / 2, cx + plate_px / 2, cy + plate_px / 2)
     elif silhouette:
-        cell = max(2, int((W * 0.9) // n))
+        target = p_scale * W * 0.86
+        cell = max(2, int(target // n))
         qr_px = cell * n
-        qr_x0 = (W - qr_px) // 2
-        qr_y0 = (W - qr_px) // 2
+        cx, cy = center[0] * W, center[1] * W
+        qr_x0 = round(cx - qr_px / 2)
+        qr_y0 = round(cy - qr_px / 2)
         plate_px = qr_px
         plate_box = (qr_x0, qr_y0, qr_x0 + qr_px, qr_y0 + qr_px)
     else:
@@ -430,12 +435,22 @@ def render(options: RenderOptions) -> RenderResult:
         canvas.alpha_composite(plate)
     elif silhouette:
         mask = shape_mask(opts.shape, W, ss=2)
-        canvas.paste(color_image(W, qr_bg), (0, 0), mask)
-        edge = ImageChops.subtract(mask.filter(ImageFilter.MaxFilter(3)), mask)
-        if edge.getbbox():
-            edge_layer = Image.new("RGBA", (W, W), _spec_colors(shape_spec)[0][:3] + (200,))
-            edge_layer.putalpha(edge)
-            canvas.alpha_composite(edge_layer)
+        if opts.shadow and not opts.transparent:
+            canvas.alpha_composite(_shadow_layer(W, mask, alpha=76, blur=max(2, W // 90), offset=(0, max(2, W // 120))))
+        silhouette_fill = mix(parse_color(qr_bg), _spec_colors(shape_spec)[0], 0.07)
+        canvas.paste(color_image(W, silhouette_fill), (0, 0), mask)
+        rim_width = max(4, W // 220)
+        if rim_width % 2 == 0:
+            rim_width += 1
+        rim = ImageChops.subtract(mask, mask.filter(ImageFilter.MinFilter(rim_width)))
+        if rim.getbbox():
+            rim_layer = Image.new("RGBA", (W, W), _spec_colors(shape_spec)[0][:3] + (235,))
+            rim_layer.putalpha(rim)
+            canvas.alpha_composite(rim_layer)
+        decor = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+        _draw_shape_decor(decor, opts.shape, W, parse_color(pal.shape_accent or shape_spec), mask)
+        decor.putalpha(ImageChops.multiply(decor.getchannel("A"), mask))
+        canvas.alpha_composite(decor)
     else:
         mask = None
 
@@ -643,19 +658,25 @@ def render_svg(options: RenderOptions) -> str:
     _, shape_def = _svg_paint(shape_spec, "shape")
     outer_paint, outer_def = _svg_paint(outer_spec, "outer")
     if silhouette:
-        area = S * 0.9
-        qx = (S - area) / 2
-        qy = (S - area) / 2
+        scale, center = _fit_plate(opts.shape)
+        cx, cy = center[0] * S, center[1] * S
+        area = scale * S * 0.86
+        qx = cx - area / 2
+        qy = cy - area / 2
         cell = area / n
+        safe, _, _ = silhouette_safe(opts.shape, qr, S, cell, round(qx), round(qy))
+        if not safe:
+            silhouette = False
+            frame = True
         plate = None
-    elif frame:
+    if not silhouette and frame:
         scale, center = _fit_plate(opts.shape)
         plate = scale * S
         cx, cy = center[0] * S, center[1] * S
         qx = cx - plate * 0.43
         qy = cy - plate * 0.43
         cell = plate * 0.86 / n
-    else:
+    elif not silhouette:
         area = S * (1 - 2 * opts.margin)
         qx = (S - area) / 2
         qy = (S - area) / 2
@@ -672,14 +693,20 @@ def render_svg(options: RenderOptions) -> str:
     ]
     if not opts.transparent:
         parts.append(f'<rect width="{S}" height="{S}" fill="{outer_paint}"/>')
+    shape_fill = mix(parse_color(qr_bg_spec), parse_color(shape_spec), 0.07) if silhouette else None
+    effective_bg = _svg_color(shape_fill) if shape_fill is not None else bg_paint
     if opts.shape != "square":
-        shape_image = _svg_shape_image(opts.shape, shape_spec, 1024)
+        shape_image = _svg_shape_image(opts.shape, shape_fill if shape_fill is not None else shape_spec, 1024)
         parts.append(f'<image href="data:image/png;base64,{shape_image}" x="0" y="0" width="{S}" height="{S}"/>')
     if silhouette:
+        rim_mask = shape_mask(opts.shape, 1024, ss=2)
+        rim = ImageChops.subtract(rim_mask, rim_mask.filter(ImageFilter.MinFilter(7)))
+        rim_image = color_image(1024, shape_spec)
+        rim_image.putalpha(rim)
+        parts.append(f'<image href="data:image/png;base64,{_embedded_png(rim_image)}" x="0" y="0" width="{S}" height="{S}"/>')
         mask_image = _embedded_png(shape_mask(opts.shape, 1024, ss=2).convert("L"))
         parts.append(f'<mask id="shapeClip"><image href="data:image/png;base64,{mask_image}" x="0" y="0" width="{S}" height="{S}"/></mask>')
         parts.append('<g mask="url(#shapeClip)">')
-        parts.append(f'<rect x="{qx:.2f}" y="{qy:.2f}" width="{cell * n:.2f}" height="{cell * n:.2f}" fill="{bg_paint}"/>')
     if plate is not None and frame:
         box = (cx - plate / 2, cy - plate / 2, cx + plate / 2, cy + plate / 2)
         parts.append(
@@ -714,13 +741,13 @@ def render_svg(options: RenderOptions) -> str:
         px = qx + fx * cell
         py = qy + fy * cell
         parts.append(f'<rect x="{px:.2f}" y="{py:.2f}" width="{cell * 7:.2f}" height="{cell * 7:.2f}" fill="{fg_paint}"/>')
-        parts.append(f'<rect x="{px + cell:.2f}" y="{py + cell:.2f}" width="{cell * 5:.2f}" height="{cell * 5:.2f}" fill="{bg_paint}"/>')
+        parts.append(f'<rect x="{px + cell:.2f}" y="{py + cell:.2f}" width="{cell * 5:.2f}" height="{cell * 5:.2f}" fill="{effective_bg}"/>')
         parts.append(f'<rect x="{px + cell * 2:.2f}" y="{py + cell * 2:.2f}" width="{cell * 3:.2f}" height="{cell * 3:.2f}" fill="{fg_paint}"/>')
     for ax, ay in qr.alignment_regions():
         px = qx + ax * cell
         py = qy + ay * cell
         parts.append(f'<rect x="{px:.2f}" y="{py:.2f}" width="{cell * 5:.2f}" height="{cell * 5:.2f}" fill="{fg_paint}"/>')
-        parts.append(f'<rect x="{px + cell:.2f}" y="{py + cell:.2f}" width="{cell * 3:.2f}" height="{cell * 3:.2f}" fill="{bg_paint}"/>')
+        parts.append(f'<rect x="{px + cell:.2f}" y="{py + cell:.2f}" width="{cell * 3:.2f}" height="{cell * 3:.2f}" fill="{effective_bg}"/>')
         parts.append(f'<rect x="{px + cell * 2:.2f}" y="{py + cell * 2:.2f}" width="{cell:.2f}" height="{cell:.2f}" fill="{fg_paint}"/>')
     if silhouette:
         parts.append("</g>")

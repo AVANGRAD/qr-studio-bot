@@ -38,6 +38,7 @@ class Draft:
     logo_mode: str = "plate"
     logo_text: str = "QR"
     logo_mono: bool = False
+    silhouette: bool = True
 
     @classmethod
     def from_data(cls, data: dict) -> Draft | None:
@@ -95,6 +96,7 @@ def _options(draft: Draft, size: int | None = None) -> RenderOptions:
         logo_mode=draft.logo_mode,
         logo_text=draft.logo_text,
         logo_mono=draft.logo_mono,
+        silhouette=draft.silhouette,
     )
 
 

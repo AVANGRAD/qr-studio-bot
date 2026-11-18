@@ -77,6 +77,8 @@ def main() -> int:
     tests.append(("logo_monogram", RenderOptions(content="", shape="square", module_style="dot", eye_style="rounded", palette="mono", logo_mode="monogram", logo_text="AK"), 512, "logos"))
     for key in shape_keys():
         tests.append((f"silhouette_{key}", RenderOptions(content="", shape=key, silhouette=True, module_style="dot", eye_style="circle", palette="green"), 768, "silhouettes"))
+    for key in shape_keys():
+        tests.append((f"figure_{key}", RenderOptions(content="", shape=key, silhouette=True, module_style="dot", eye_style="circle", palette="blue"), 768, "figures"))
     for size in (512, 1024, 2048):
         tests.append((f"size_{size}", RenderOptions(content="", shape="rounded", module_style="dot", eye_style="circle", palette="red"), size, "sizes"))
 
