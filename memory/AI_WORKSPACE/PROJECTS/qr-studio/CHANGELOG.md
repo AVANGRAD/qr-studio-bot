@@ -46,3 +46,14 @@
 - Кнопки «Фото + QR» на старте и «Фото» в редакторе; фото можно загрузить до текста, удалить и заменить.
 - `pytest` 38/38, `ruff` OK, scans 187/187; feature-коммит `c5dfbe5`.
 - Feature deploy `c5dfbe5` live; docs-коммит `b78954e`; `/healthz`, `/app`, catalog и preview 200; webhook pending 0.
+
+## 2026-11-18 — расширение каталога и встроенные логотипы
+
+- Формы: +8 (`squircle`, `burst`, `clover`, `cactus`, `frog`, `whale`, `anchor`, `music_note`), всего 52.
+- Модули: +6 (`flower`, `chevron`, `arch`, `spark`, `plus`, `brick`), всего 24; `brick` — 2 варианта.
+- Глаза: +4 (`capsule`, `octagon`, `spark`, `heart`), всего 14; `capsule`/`octagon`/`spark` рендерятся безопасными фигурами, `heart` — через safe-base overlay.
+- Палитры: +4 (`berry`, `ocean`, `sunset`, `midnight`), всего 19; пресеты: +7, всего 25.
+- Логотипы: режим `badge` («Медальон») в PNG/SVG и меню; `qrstudio/emblems.py` с 12 нейтральными иконками; `Draft.logo_label` и подписи.
+- `flower` переведён на безопасную базу `dot` + overlay после scan-провала.
+- Mini App: 134 плитки, cache-bust `?v=variety1`; тесты каталога обновлены.
+- Проверки: pytest 42/42, ruff OK, `node --check` OK, scans 262/262.

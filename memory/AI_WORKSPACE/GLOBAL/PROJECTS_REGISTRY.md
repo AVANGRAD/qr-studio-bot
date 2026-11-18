@@ -2,4 +2,4 @@
 
 | Проект | Путь | Статус |
 |---|---|---|
-| QR Studio Bot | `PROJECTS/qr-studio/` | Фото-режим задеплоен (`c5dfbe5`, docs `b78954e`); live-проверка фото в Telegram ожидается |
+| QR Studio Bot | `PROJECTS/qr-studio/` | Расширение каталога готово локально (52/24/14/19/25, 12 иконок, 262 scan); commit/deploy и live-проверка ожидаются |
