@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: qr-studio-bot
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m bot.main
+    healthCheckPath: /healthz
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: BOT_MODE
+        value: webhook
+      - key: SELF_PING_INTERVAL_SECONDS
+        value: "600"
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: MAX_CONTENT
+        value: "1200"
+      - key: ADMIN_ID
+        sync: false
