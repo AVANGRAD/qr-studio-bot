@@ -10,8 +10,6 @@ services:
     envVars:
       - key: BOT_TOKEN
         sync: false
-      - key: WEBHOOK_SECRET
-        generateValue: true
       - key: BOT_MODE
         value: webhook
       - key: SELF_PING_INTERVAL_SECONDS

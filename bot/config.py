@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import os
+import re
 from dataclasses import dataclass
 
 
@@ -34,9 +36,9 @@ class Settings:
             mode = "webhook"
         base = (os.getenv("WEBHOOK_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").strip().rstrip("/") or None
         secret = (os.getenv("WEBHOOK_SECRET") or "").strip() or None
+        if secret is not None and not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", secret):
+            secret = hashlib.sha256(secret.encode("utf-8")).hexdigest()[:40]
         if secret is None and mode == "webhook":
-            import hashlib
-
             secret = hashlib.sha256(token.encode("utf-8")).hexdigest()[:40]
         admin = os.getenv("ADMIN_ID", "").strip()
         return cls(
