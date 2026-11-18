@@ -57,3 +57,4 @@
 - `flower` переведён на безопасную базу `dot` + overlay после scan-провала.
 - Mini App: 134 плитки, cache-bust `?v=variety1`; тесты каталога обновлены.
 - Проверки: pytest 42/42, ruff OK, `node --check` OK, scans 262/262.
+- Feature-коммит `0e01ca3`, docs `e12f6f5`; Render deploy live; `/healthz`, `/app`, catalog 200; live-каталог 52/24/14/19/25; webhook pending 0.

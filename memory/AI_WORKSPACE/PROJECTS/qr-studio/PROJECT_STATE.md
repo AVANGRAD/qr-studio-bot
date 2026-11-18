@@ -21,18 +21,14 @@
 - Фото-поддержка в PNG/SVG; `Draft.photo_bytes`, `prepare_uploaded_photo`, `Flow.photo`, `bot/handlers/photo.py`, кнопки «Фото + QR»/«Фото»; загрузка до и после текста.
 - `pytest`: 42 теста проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
 - `scripts/check_scans.py`: 262/262 QR декодируются, включая 52 формы в figure-режиме, 25 пресетов, 12 встроенных иконок и фото-сценарии.
-- GitHub HEAD: `dd3cad9` (фото-режим задеплоен); расширение каталога пока не закоммичено.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `dd3cad9`; новый деплой расширения ожидается.
-- `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; webhook pending 0; бот `@QUaRc0De_bot` id `9062123985`.
-
-## В работе
-
-- Проверить diff расширения, затем закоммитить, запушить и задеплоить.
-- После деплоя обновить live-проверку каталога и webhook.
+- GitHub HEAD: `e12f6f5` (docs), feature-коммит `0e01ca3`; расширение запушено в `master`.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `e12f6f5`.
+- `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; live-каталог 52/24/14/19/25; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
 
 - Живая проверка в Telegram: фото, фото + логотип, фото-первый сценарий, новые формы/узоры/глаза, встроенные иконки и режим «Медальон».
+- Проверить экстремальные комбинации вроде `frog + flower + spark` на 512–640 px: локально они могут не декодироваться, на 1024 px проходят.
 - Проверить, что новая карточка фото не закрывает важный объект; при необходимости изменить `photo_card`/`photo_inset`.
 - Решить, нужен ли UI-переключатель «в фигуре / с плашкой»; сейчас figure-режим включён по умолчанию.
 - При необходимости добавить скриншоты/примеры Mini App и фото-режима в README.

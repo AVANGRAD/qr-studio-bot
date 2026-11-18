@@ -6,4 +6,4 @@
 
 `flower` после scan-провала переведён на безопасную базу `dot` + overlay. Мини-каталог пересобран: 134 плитки, cache-bust `?v=variety1`.
 
-Проверки: `pytest` 42/42, `ruff` OK, `node --check` OK, `scripts/check_scans.py` 262/262 (52 формы в figure-режиме, 25 пресетов, 12 иконок, фото-сценарии). Изменения пока не закоммичены и не задеплоены; live остаётся `dd3cad9`.
+Проверки: `pytest` 42/42, `ruff` OK, `node --check` OK, `scripts/check_scans.py` 262/262 (52 формы в figure-режиме, 25 пресетов, 12 иконок, фото-сценарии). Feature-коммит `0e01ca3`, docs `e12f6f5`; Render deploy live. Live-каталог 52/24/14/19/25, `/healthz`/`/app`/catalog 200, webhook pending 0. Осталось: живая проверка в Telegram и экстремальные комбинации на малом размере.
