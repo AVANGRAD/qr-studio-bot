@@ -125,7 +125,7 @@ def _heart(d: ImageDraw.ImageDraw, s: int) -> None:
 
 
 def _leaf(d: ImageDraw.ImageDraw, s: int) -> None:
-    _poly(d, leaf_points(s / 2, s * 0.53, s * 0.48, steps=28))
+    _poly(d, leaf_points(s / 2, s * 0.51, s * 0.49, steps=48))
 
 
 def _flower(d: ImageDraw.ImageDraw, s: int) -> None:

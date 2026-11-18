@@ -70,18 +70,30 @@ def heart_points(cx: float, cy: float, radius: float, steps: int = 32) -> list[P
     ]
 
 
-def leaf_points(cx: float, cy: float, radius: float, steps: int = 20) -> list[Point]:
+def leaf_points(cx: float, cy: float, radius: float, steps: int = 36, stem: bool = True) -> list[Point]:
     pts: list[Point] = []
+    width_scale = 0.66 * radius
+    height = 1.72 * radius
     for i in range(steps + 1):
-        t = math.pi * i / steps
-        x = math.sin(t) * radius
-        y = -math.cos(t) * radius
-        pts.append((cx + x, cy + y))
-    for i in range(steps + 1):
-        t = math.pi * i / steps
-        x = math.sin(t) * radius * 0.55
-        y = math.cos(t) * radius
-        pts.append((cx + x, cy + y))
+        t = i / steps
+        width = math.sin(math.pi * t) ** 0.72
+        pts.append((cx + width_scale * width, cy - radius + height * t))
+    if stem:
+        stem_w = 0.085 * radius
+        stem_top = cy + 0.76 * radius
+        stem_bottom = cy + 1.04 * radius
+        pts.extend(
+            [
+                (cx + stem_w, stem_top),
+                (cx + stem_w * 0.7, stem_bottom),
+                (cx - stem_w * 0.7, stem_bottom),
+                (cx - stem_w, stem_top),
+            ]
+        )
+    for i in range(steps, -1, -1):
+        t = i / steps
+        width = math.sin(math.pi * t) ** 0.72
+        pts.append((cx - width_scale * width, cy - radius + height * t))
     return pts
 
 
@@ -111,7 +123,7 @@ def _draw_paw(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
 
 
 def _draw_leaf(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:
-    d.polygon(_polygon(leaf_points(x + c / 2, y + c / 2, c * 0.43)), fill=255)
+    d.polygon(_polygon(leaf_points(x + c / 2, y + c / 2, c * 0.43, stem=False)), fill=255)
 
 
 def _draw_flower(d: ImageDraw.ImageDraw, x: float, y: float, c: float) -> None:

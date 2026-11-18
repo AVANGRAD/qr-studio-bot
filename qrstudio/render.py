@@ -112,7 +112,7 @@ def _fit_plate(shape: str, max_scale: float | None = None, min_scale: float = 0.
         return 0.92, center
     if max_scale is None:
         category = SHAPES.get(shape).category if shape in SHAPES else ""
-        max_scale = 0.62 if category == "Животные" else 0.7
+        max_scale = 0.60 if category == "Животные" else 0.66
     probe = shape_mask(shape, 384, ss=2)
     pixels = probe.load()
     size = probe.width
