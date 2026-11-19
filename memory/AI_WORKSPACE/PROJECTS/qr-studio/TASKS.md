@@ -17,12 +17,14 @@
 - [x] QR встроен в силуэт без квадратной плашки; 36/51 не-square форм.
 - [x] Пересобраны 134 плитки Mini App; cache-bust `?v=variety1`.
 - [x] GitHub-репозиторий и Render web service.
-- [x] 46 pytest-тестов и 262/262 scan-регрессия, включая figure, пресеты, иконки и фото.
+- [x] 49 pytest-тестов и 262/262 scan-регрессия, включая figure, пресеты, иконки и фото.
 - [x] Фото-режим PNG/SVG: карточка QR поверх фото, размытый фон, EXIF-поворот, лимит 12 МБ.
 - [x] Бот: `Flow.photo`, загрузка фото до/после текста, preview, удаление, кнопки «Фото + QR»/«Фото».
 - [x] Проверить diff, закоммитить, запушить и задеплоить расширение (`0e01ca3`, docs `e12f6f5`).
 - [x] Apply fix: подписанный `POST /app/apply`, HMAC initData, synthetic `web_app_data`, cache-bust `?v=apply1` (`6c35f98`, `ed3639e`).
+- [x] Download fix: HTML-экранирование SVG-caption, XML-escape мононограммы, fallback без caption (`457c137`, `3b1b1d8`).
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.
+- [ ] Живая проверка PNG/SVG после download fix.
 - [ ] Живая проверка Telegram: фото, фото + логотип, фото-первый сценарий, иконки и «Медальон».
 
 ## Идеи

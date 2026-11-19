@@ -57,3 +57,10 @@
 - Исправление: `POST /app/apply` с `initData`, HMAC-проверка, synthetic `web_app_data` и `Dispatcher.feed_update`; `sendData` оставлен fallback.
 - Дополнительно: preview отправляется даже при повторном применении тех же настроек; `app.js?v=apply1` сбрасывает кэш WebView.
 - Проверка: pytest 46/46, scans 262/262, live `/app/apply` 400 без initData; живой Telegram-тест за пользователем.
+
+## 2026-11-19 — PNG/SVG download не отправляется
+
+- Симптом: нажатие «Скачать PNG»/«Скачать SVG» не даёт файл.
+- Причина: SVG-caption подставлял `draft.content` в HTML без экранирования; Telegram отклонял `&` в ссылках. XML-мононограмма также не экранировалась.
+- Исправление: `html.escape(short(...))`, XML-escape `logo_text`, `disable_content_type_detection=True`, fallback без caption.
+- Проверка: pytest 49/49, scans 262/262; живой Telegram-тест за пользователем.

@@ -47,6 +47,15 @@
 - `pytest` 38/38, `ruff` OK, scans 187/187; feature-коммит `c5dfbe5`.
 - Feature deploy `c5dfbe5` live; docs-коммит `b78954e`; `/healthz`, `/app`, catalog и preview 200; webhook pending 0.
 
+## 2026-11-19 — PNG/SVG download fix
+
+- Причина: SVG-caption содержал `draft.content` без HTML-экранирования; ссылки с `&` ломали caption, документ не отправлялся.
+- SVG-caption переведён на `html.escape(short(...))`; добавлен `disable_content_type_detection=True`.
+- `logo_text` в SVG экранируется как XML.
+- При ошибке caption документ повторно отправляется без подписи.
+- Проверки: pytest 49/49, ruff OK, scans 262/262.
+- Коммиты `457c137`, `3b1b1d8`; Render live `3b1b1d8`.
+
 ## 2026-11-19 — Apply в Mini App
 
 - Причина бага: `WebApp.sendData` не работает для Mini App, открытых из menu/inline.

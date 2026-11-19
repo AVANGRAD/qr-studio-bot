@@ -19,15 +19,16 @@
 - QR встроен в силуэт: 36 из 51 не-square формы рендерятся без плашки; 15 сложных форм безопасно откатываются в frame с предупреждением.
 - Фото-режим: фото полностью вписывается, фон — размытая cover-копия; QR на светлой карточке 42% справа снизу (`photo_inset=0.055`, `photo_opacity=244`).
 - Фото-поддержка в PNG/SVG; `Draft.photo_bytes`, `prepare_uploaded_photo`, `Flow.photo`, `bot/handlers/photo.py`, кнопки «Фото + QR»/«Фото»; загрузка до и после текста.
-- `pytest`: 46 тестов проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
+- `pytest`: 49 тестов проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
 - `scripts/check_scans.py`: 262/262 QR декодируются, включая 52 формы в figure-режиме, 25 пресетов, 12 встроенных иконок и фото-сценарии.
-- GitHub HEAD: `1fa5a83` (docs); код Apply fix `6c35f98`, cache-bust `ed3639e`; `master` запушен.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live код `ed3639e`, docs deploy `1fa5a83`.
+- GitHub HEAD: `3b1b1d8`; Apply fix `6c35f98`, cache-bust `ed3639e`, download fix `457c137`/`3b1b1d8`; `master` запушен.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `3b1b1d8`.
 - `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; live-каталог 52/24/14/19/25; live `app.js` содержит `/app/apply`, HTML подключает `?v=apply1`; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
 
 - Живая проверка Apply в Telegram: menu/inline и keyboard-сценарий.
+- Живая проверка PNG/SVG после исправления caption.
 - Живая проверка в Telegram: фото, фото + логотип, фото-первый сценарий, новые формы/узоры/глаза, встроенные иконки и режим «Медальон».
 - Проверить экстремальные комбинации вроде `frog + flower + spark` на 512–640 px: локально они могут не декодироваться, на 1024 px проходят.
 - Проверить, что новая карточка фото не закрывает важный объект; при необходимости изменить `photo_card`/`photo_inset`.
@@ -43,6 +44,7 @@
 - Free Render засыпает; self-ping 600 с; первый запуск после сна около минуты.
 - Mini App требует HTTPS; загрузка фото и своих файлов в Mini App не поддерживается.
 - `WebApp.sendData` не работает для menu/inline Mini App; для них используется серверный `/app/apply` с подписанным `initData`.
+- SVG-caption экранирует HTML; при ошибке caption документ отправляется без подписи.
 - Статические плитки нужно пересобирать после изменения каталога: `python scripts/build_miniapp_thumbs.py`.
 - 15 сложных силуэтов (`moon`, `snowflake`, `wave`, `fox`, `ladybug`, `turtle`, `penguin`, `frog`, `whale`, `mask`, `rocket`, `guitar`, `pumpkin`, `anchor`, `music_note`) используют безопасную плашку.
 - Встроенные иконки нейтральные, без брендовых логотипов; брендовый знак можно загрузить своим файлом.
