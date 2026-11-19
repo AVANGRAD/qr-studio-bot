@@ -28,16 +28,14 @@
 - В Mini App добавлен переключатель RU/EN; язык сразу перерисовывает интерфейс и каталог, сохраняется в `localStorage`, а Apply синхронизирует FSM.
 - `bot/services.set_menu_button()` обновляет per-chat menu button с `?lang=`; вызывается из `/start`, `/language` и Apply. Глобальная кнопка без `lang` остаётся fallback.
 - Команды бота: default English + `ru` scope; `set_commands` исправлен, чтобы default не зависел от ContextVar.
-- GitHub: feature `3f1062f`, docs `1d108fd`, docs `194d412`; `master` содержит локализацию, live deploy `194d412`.
-- Новые изменения Mini App language switching (toggle, per-chat menu, Apply `lang`) пока не закоммичены и не задеплоены.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com; feature deploy `3f1062f` (`dep-dbvcimjrjlhs73ed143g`), docs redeploy `1d108fd` (`dep-dbvck6p7lnhs739caeu0`), оба live.
-- Live 2026-11-19: `/healthz`, `/app`, `/app/static/app.js`, `/app/catalog.json?lang=en|ru`, `/app/preview.png` 200; `/app/apply` 400 без initData; live HTML ещё подключает `?v=i18n1`; локально подготовлен `i18n2`; EN-каталог `Geometry/Square/Golden leaf`, RU — `Геометрия/Квадрат`; команды default EN и `ru` scope; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
+- GitHub: feature `3f1062f`, docs `1d108fd`, docs `194d412`, feature `9654ddf` (`feat: sync mini app language with bot`); `master` запушен.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com; feature deploy `9654ddf` (`dep-dbvdvip42hec73bceqng`), live 2026-11-19 11:40 UTC; предыдущие `3f1062f`/`1d108fd` — `dep-dbvcimjrjlhs73ed143g`/`dep-dbvck6p7lnhs739caeu0`.
+- Live 2026-11-19 после `9654ddf`: `/healthz`, `/app`, `/app/static/app.js`, `/app/catalog.json?lang=en|ru`, `/app/preview.png` 200; live HTML и JS `?v=i18n2`, есть `id="lang"`, `setLanguage`, `qrstudio.lang`; EN-каталог `Geometry/Square/Golden leaf`, RU — `Геометрия/Квадрат/Золотой лист`; `/app/apply` 400 без initData; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
 
 - Живая проверка Telegram: `/start`, picker RU/EN, `/language`, `en`-Telegram, Mini App `?lang=en` и команды.
 - Живая проверка переключателя RU/EN в Mini App и per-chat menu button после `/language`/Apply.
-- Commit/push/deploy новых изменений Mini App language switching.
 - Живая проверка Apply в Telegram: menu/inline и keyboard-сценарий.
 - Живая проверка PNG после принудительной отправки документом (`819253b`); SVG уже проверен пользователем.
 - Живая проверка в Telegram: фото, фото + логотип, фото-первый сценарий, новые формы/узоры/глаза, встроенные иконки и режим «Медальон».

@@ -21,7 +21,12 @@ Mini App должен менять язык вместе с ботом и поз
 - `scripts/check_scans.py`: 262/262.
 - Headless Chromium: EN→RU toggle, каталог `Квадрат`, кнопка `EN`, Apply payload `lang=ru`.
 
+## Публикация
+
+- Коммит `9654ddf` (`feat: sync mini app language with bot`).
+- Render deploy `dep-dbvdvip42hec73bceqng` live.
+- Live: HTML/JS `?v=i18n2`, каталог EN/RU, Apply без initData 400, webhook pending 0.
+
 ## Осталось
 
-- Commit/push/deploy.
 - Живая проверка toggle и per-chat menu button в Telegram.

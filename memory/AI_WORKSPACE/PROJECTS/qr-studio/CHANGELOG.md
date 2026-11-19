@@ -99,7 +99,7 @@
 - `set_menu_button()` вынесен в `bot/services.py`; `/start`, `/language` и Apply обновляют `MenuButtonWebApp?lang=`.
 - Добавлены тесты языка из payload и per-chat menu button; проверки: pytest 64/64, ruff OK, `node --check` OK, scans 262/262.
 - Headless Chromium: EN→RU toggle, каталог `Квадрат`, Apply payload `lang=ru`.
-- Изменения пока не закоммичены/не задеплоены.
+- Коммит `9654ddf`; Render deploy `dep-dbvdvip42hec73bceqng` live; live HTML/JS `i18n2`, каталог EN/RU, Apply без initData 400, webhook pending 0.
 
 ## 2026-11-19 — PNG download принудительно документом
 

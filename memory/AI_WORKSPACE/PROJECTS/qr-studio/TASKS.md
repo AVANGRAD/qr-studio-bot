@@ -32,7 +32,7 @@
 - [x] Apply передаёт `lang`; `on_web_app_data` обновляет FSM и per-chat menu button.
 - [x] Per-chat `MenuButtonWebApp?lang=` после `/start`, `/language` и Apply; global fallback.
 - [x] Headless Chromium smoke: toggle EN→RU, каталог `Квадрат`, Apply payload `lang=ru`.
-- [ ] Commit/push/deploy Mini App language switching.
+- [x] Commit/push/deploy Mini App language switching (`9654ddf`, deploy `dep-dbvdvip42hec73bceqng`).
 - [x] Закоммитить и задеплоить локализацию (`3f1062f`, docs `1d108fd`; deploy `dep-dbvcimjrjlhs73ed143g`, docs redeploy `dep-dbvck6p7lnhs739caeu0`).
 - [ ] Живая проверка picker/`/language`/EN/Mini App.
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.
