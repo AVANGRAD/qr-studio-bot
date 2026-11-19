@@ -21,8 +21,8 @@
 - Фото-поддержка в PNG/SVG; `Draft.photo_bytes`, `prepare_uploaded_photo`, `Flow.photo`, `bot/handlers/photo.py`, кнопки «Фото + QR»/«Фото»; загрузка до и после текста.
 - `pytest`: 46 тестов проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
 - `scripts/check_scans.py`: 262/262 QR декодируются, включая 52 формы в figure-режиме, 25 пресетов, 12 встроенных иконок и фото-сценарии.
-- GitHub HEAD: `ed3639e`; Apply fix `6c35f98`, cache-bust `ed3639e`; `master` запушен.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `ed3639e`.
+- GitHub HEAD: `1fa5a83` (docs); код Apply fix `6c35f98`, cache-bust `ed3639e`; `master` запушен.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live код `ed3639e`, docs deploy `1fa5a83`.
 - `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; live-каталог 52/24/14/19/25; live `app.js` содержит `/app/apply`, HTML подключает `?v=apply1`; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
