@@ -28,7 +28,7 @@
 - [x] Выбор языка при первом `/start`, `/language`, `clear_flow` сохраняет `lang`.
 - [x] Default English + `ru` scope для Telegram-команд; synthetic `User.language_code` для Apply.
 - [x] Проверки локализации: pytest 62/62, ruff OK, `node --check` OK, scans 262/262.
-- [x] Закоммитить и задеплоить локализацию (`3f1062f`, deploy `dep-dbvcimjrjlhs73ed143g`).
+- [x] Закоммитить и задеплоить локализацию (`3f1062f`, docs `1d108fd`; deploy `dep-dbvcimjrjlhs73ed143g`, docs redeploy `dep-dbvck6p7lnhs739caeu0`).
 - [ ] Живая проверка picker/`/language`/EN/Mini App.
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.
 - [ ] Живая проверка PNG после `disable_content_type_detection` (`819253b`); SVG подтверждён пользователем.

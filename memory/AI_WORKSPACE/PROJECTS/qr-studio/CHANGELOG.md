@@ -89,7 +89,7 @@
 - Telegram-команды: default English + `ru` scope; исправлен захват ContextVar.
 - Удалён устаревший `bot/texts.py`; добавлен `tests/test_i18n.py`.
 - Проверки: pytest 62/62, ruff OK, `node --check webapp/app.js` OK, scans 262/262.
-- Коммит `3f1062f`, Render live `3f1062f` (`dep-dbvcimjrjlhs73ed143g`); `/healthz`, `/app`, EN/RU catalog и preview 200, Apply без initData 400, команды EN/RU, webhook pending 0.
+- Коммит `3f1062f`, docs `1d108fd`; Render live `3f1062f` (`dep-dbvcimjrjlhs73ed143g`), docs redeploy `1d108fd` (`dep-dbvck6p7lnhs739caeu0`); `/healthz`, `/app`, EN/RU catalog и preview 200, Apply без initData 400, команды EN/RU, webhook pending 0.
 
 ## 2026-11-19 — PNG download принудительно документом
 

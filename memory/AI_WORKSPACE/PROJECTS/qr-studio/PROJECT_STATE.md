@@ -26,8 +26,8 @@
 - Локализованы handlers, keyboards, errors, services, Mini App и каталог; `RenderResult.warning_codes` позволяет переводить предупреждения без потери raw-текста.
 - Mini App: язык из URL → Telegram → browser; `/app/catalog.json?lang=`; Apply передаёт synthetic `User.language_code`.
 - Команды бота: default English + `ru` scope; `set_commands` исправлен, чтобы default не зависел от ContextVar.
-- GitHub HEAD: `3f1062f` (`feat: add ru/en localization and language picker`); `master` запушен.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `3f1062f` (`dep-dbvcimjrjlhs73ed143g`).
+- GitHub: feature `3f1062f` (`feat: add ru/en localization and language picker`), docs `1d108fd` (`docs: record ru/en localization and deploy`); `master` запушен.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com; feature deploy `3f1062f` (`dep-dbvcimjrjlhs73ed143g`), docs redeploy `1d108fd` (`dep-dbvck6p7lnhs739caeu0`), оба live.
 - Live 2026-11-19: `/healthz`, `/app`, `/app/static/app.js`, `/app/catalog.json?lang=en|ru`, `/app/preview.png` 200; `/app/apply` 400 без initData; HTML подключает `?v=i18n1`; EN-каталог `Geometry/Square/Golden leaf`, RU — `Геометрия/Квадрат`; команды default EN и `ru` scope; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
