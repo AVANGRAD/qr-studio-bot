@@ -26,6 +26,7 @@ Telegram-бот `@QUaRc0De_bot`: превращает ссылку или тек
 - segno 1.6.6
 - Pillow 13
 - aiohttp
+- asyncpg 0.32 + PostgreSQL (Supabase) для аналитики
 
 ## Локальный запуск
 
@@ -49,7 +50,8 @@ BOT_MODE=polling python -m bot.main
 | `WEBHOOK_BASE_URL` | `RENDER_EXTERNAL_URL` | Публичный HTTPS-адрес сервиса |
 | `WEBHOOK_SECRET` | hash токена | Hex-секрет заголовка `X-Telegram-Bot-Api-Secret-Token`; можно не задавать |
 | `SELF_PING_INTERVAL_SECONDS` | `600` | Пинг `/healthz`, чтобы free-сервис не засыпал |
-| `ADMIN_ID` | — | Telegram ID администратора |
+| `ADMIN_ID` | — | Telegram ID администратора для `/stats` |
+| `DATABASE_URL` | — | PostgreSQL URL для аналитики; без него бот работает как раньше |
 | `MAX_CONTENT_LENGTH` | `1200` | Максимум символов в QR |
 | `MAX_LOGO_BYTES` | `6291456` | Максимум размера логотипа |
 
@@ -62,7 +64,8 @@ BOT_MODE=polling python -m bot.main
 1. Создай Blueprint или Web Service из репозитория.
 2. Укажи `BOT_TOKEN`; `WEBHOOK_SECRET` можно не задавать — он будет вычислен из токена. Если задаёшь вручную, используй только hex (без спецсимволов), иначе Telegram отклонит webhook.
 3. `WEBHOOK_BASE_URL` подхватится из `RENDER_EXTERNAL_URL`.
-4. После деплоя открой `https://<service>.onrender.com/healthz` и `/app`.
+4. Для аналитики добавь `DATABASE_URL` от Supabase/Postgres и задай `ADMIN_ID`.
+5. После деплоя открой `https://<service>.onrender.com/healthz` и `/app`.
 
 Free-план засыпает без трафика. Бот пингует себя раз в 10 минут; первый запуск после сна занимает около минуты.
 
@@ -82,6 +85,17 @@ Mini App работает в webhook-режиме; в polling-режиме кн�
 
 Фото-режим доступен в боте: кнопка «Фото + QR» на стартовом экране или «Фото» в редакторе. Загруженное фото не участвует в статическом каталоге Mini App.
 
+## Аналитика
+
+При наличии `DATABASE_URL` бот создаёт схему `analytics` и пишет туда пользователей и события. Это не мешает работе бота: если база недоступна, обновления продолжают обрабатываться, а ошибки только логируются.
+
+- `analytics.users` — `user_id`, `username`, `first_name`, `language_code`, `first_seen`, `last_seen`, `updates_count`, `starts_count`, `last_event`, `blocked_at`.
+- `analytics.events` — `user_id`, `event_type`, `created_at`, `metadata`; текст сообщений и содержимое QR не сохраняются.
+- События: `/start`, команды, сообщения, Apply Mini App, скачивания PNG/SVG, смена языка/формы/узора/палитры, пресеты и фото.
+- `/stats` показывает всего пользователей, новых за сегодня/7/30 дней, активных за 15 минут/день/7/30 дней, неактивных 30+ дней, заблокировавших бота и топ событий. Команда доступна только при заданном `ADMIN_ID`.
+
+Точного события «пользователь ушёл» Telegram не присылает: в private-чате нельзя узнать, закрыл ли человек чат или удалил бота. Поэтому «ушёл» — это отсутствие активности 30+ дней; статус `blocked_at` выставляется только когда Telegram сообщает `403`, например при рассылке.
+
 ## Проверки
 
 ```bash
@@ -96,7 +110,7 @@ python scripts/check_scans.py
 
 ```
 qrstudio/   генерация QR, формы, глаза, палитры, иконки, рендер PNG/SVG
-bot/        aiogram-бот: меню, FSM, лимиты, превью
+bot/        aiogram-бот: меню, FSM, лимиты, превью, аналитика
 scripts/    регрессия сканирования и сборка плиток Mini App
 webapp/     HTML/CSS/JS Mini App и статические плитки
 assets/     шрифт Roboto и лицензия OFL

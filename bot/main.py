@@ -12,9 +12,10 @@ from aiogram.types import BotCommand
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import ClientSession, web
 
+from .analytics import Analytics, AnalyticsMiddleware
 from .config import Settings
 from .errors import error_handler
-from .handlers import create, logo, menu, photo, settings, start, webapp
+from .handlers import admin, create, logo, menu, photo, settings, start, webapp
 from .i18n import LanguageMiddleware, t, use_lang
 from .miniapp import setup as setup_miniapp
 from .services import set_menu_button
@@ -38,11 +39,14 @@ async def health(_: web.Request) -> web.Response:
     )
 
 
-def build() -> tuple[Bot, Dispatcher, Settings]:
+def build() -> tuple[Bot, Dispatcher, Settings, Analytics]:
     cfg = Settings.from_env()
     bot = Bot(token=cfg.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=MemoryStorage())
+    analytics = Analytics(cfg.database_url)
     dp.update.outer_middleware(LanguageMiddleware())
+    dp.update.outer_middleware(AnalyticsMiddleware(analytics, cfg.admin_id))
+    dp.include_router(admin.router)
     dp.include_router(start.router)
     dp.include_router(webapp.router)
     dp.include_router(logo.router)
@@ -51,7 +55,7 @@ def build() -> tuple[Bot, Dispatcher, Settings]:
     dp.include_router(menu.router)
     dp.include_router(settings.router)
     dp.errors.register(error_handler)
-    return bot, dp, cfg
+    return bot, dp, cfg, analytics
 
 
 async def set_commands(bot: Bot) -> None:
@@ -129,13 +133,15 @@ async def run_polling(bot: Bot, dp: Dispatcher) -> None:
 
 
 async def main() -> None:
-    bot, dp, cfg = build()
+    bot, dp, cfg, analytics = build()
+    await analytics.connect()
     try:
         if cfg.mode == "polling":
             await run_polling(bot, dp)
         else:
             await run_webhook(bot, dp, cfg)
     finally:
+        await analytics.close()
         await bot.session.close()
 
 

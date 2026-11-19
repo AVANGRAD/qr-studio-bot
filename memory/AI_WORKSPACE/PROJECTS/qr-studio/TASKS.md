@@ -34,6 +34,14 @@
 - [x] Headless Chromium smoke: toggle EN→RU, каталог `Квадрат`, Apply payload `lang=ru`.
 - [x] Commit/push/deploy Mini App language switching (`9654ddf`, deploy `dep-dbvdvip42hec73bceqng`).
 - [x] Закоммитить и задеплоить локализацию (`3f1062f`, docs `1d108fd`; deploy `dep-dbvcimjrjlhs73ed143g`, docs redeploy `dep-dbvck6p7lnhs739caeu0`).
+- [x] Аналитика: `analytics.users`/`analytics.events`, `asyncpg`, middleware на каждом update.
+- [x] `/stats` для админа: новые, активные, неактивные, заблокированные, языки и топ событий.
+- [x] Проверено подключение к Supabase PostgreSQL 17.12; тестовые записи созданы и удалены.
+- [x] `DATABASE_URL` добавлен в `.env`, Render Environment, `.env.example`, `render.yaml`; `asyncpg` — в requirements.
+- [x] Проверки: pytest 70/70, ruff OK.
+- [x] Получить Telegram ID администратора и задать `ADMIN_ID` локально и в Render.
+- [ ] Закоммитить и задеплоить аналитику; проверить `/stats` и live-события.
+- [ ] При необходимости добавить рассылку с обработкой 403 для `blocked_at`.
 - [ ] Живая проверка picker/`/language`/EN/Mini App.
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.
 - [ ] Живая проверка PNG после `disable_content_type_detection` (`819253b`); SVG подтверждён пользователем.

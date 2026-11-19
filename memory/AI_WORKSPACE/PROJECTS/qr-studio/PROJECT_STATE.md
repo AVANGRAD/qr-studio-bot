@@ -19,7 +19,7 @@
 - QR встроен в силуэт: 36 из 51 не-square формы рендерятся без плашки; 15 сложных форм безопасно откатываются в frame с предупреждением.
 - Фото-режим: фото полностью вписывается, фон — размытая cover-копия; QR на светлой карточке 42% справа снизу (`photo_inset=0.055`, `photo_opacity=244`).
 - Фото-поддержка в PNG/SVG; `Draft.photo_bytes`, `prepare_uploaded_photo`, `Flow.photo`, `bot/handlers/photo.py`, кнопки «Фото + QR»/«Фото»; загрузка до и после текста.
-- `pytest`: 64 теста проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
+- `pytest`: 70 тестов проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
 - `scripts/check_scans.py`: 262/262 QR декодируются, включая 52 формы в figure-режиме, 25 пресетов, 12 встроенных иконок и фото-сценарии.
 - PNG download теперь принудительно отправляется как документ (`disable_content_type_detection=True`) и в текущий чат, а не в `callback.from_user.id`; это устраняет авто-обработку PNG как фото и сбои в группах.
 - Локализация `ru/en`: `bot/i18n.py`, `t()`, `LanguageMiddleware`, `resolve_lang()`; выбор языка при первом `/start`, `/language`, callback `lang:set:*`; выбор сохраняется в FSM как `lang` и переживает `clear_flow`.
@@ -30,11 +30,17 @@
 - Команды бота: default English + `ru` scope; `set_commands` исправлен, чтобы default не зависел от ContextVar.
 - GitHub: feature `3f1062f`, docs `1d108fd`, docs `194d412`, feature `9654ddf` (`feat: sync mini app language with bot`); `master` запушен.
 - Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com; feature deploy `9654ddf` (`dep-dbvdvip42hec73bceqng`), live 2026-11-19 11:40 UTC; предыдущие `3f1062f`/`1d108fd` — `dep-dbvcimjrjlhs73ed143g`/`dep-dbvck6p7lnhs739caeu0`.
+- Аналитика: `bot/analytics.py` подключается к Supabase PostgreSQL через `asyncpg`, создаёт `analytics.users`/`analytics.events`, пишет активность middleware и считает DAU/WAU/MAU; `/stats` доступен только при `ADMIN_ID`.
+- Схема аналитики: пользователь (`first_seen`, `last_seen`, `updates_count`, `starts_count`, `blocked_at`) и события (`start`, команды, сообщения, Mini App Apply, скачивания, смена настроек); текст сообщений и содержимое QR не сохраняются.
+- Новый Supabase PostgreSQL 17.12 проверен: таблицы созданы, тестовые пользователь/события записаны и удалены; `DATABASE_URL` добавлен в локальный `.env` и Render Environment.
+- `asyncpg==0.32.0` добавлен в `requirements.txt`, `DATABASE_URL` — в `.env.example` и `render.yaml`; `ADMIN_ID` найден по последнему чату с ботом и задан локально и в Render.
+- Актуальные проверки: `pytest` 70/70, `ruff` OK; live-деплой аналитики ещё не выполнен.
 - Live 2026-11-19 после `9654ddf`: `/healthz`, `/app`, `/app/static/app.js`, `/app/catalog.json?lang=en|ru`, `/app/preview.png` 200; live HTML и JS `?v=i18n2`, есть `id="lang"`, `setLanguage`, `qrstudio.lang`; EN-каталог `Geometry/Square/Golden leaf`, RU — `Геометрия/Квадрат/Золотой лист`; `/app/apply` 400 без initData; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
 
 - Живая проверка Telegram: `/start`, picker RU/EN, `/language`, `en`-Telegram, Mini App `?lang=en` и команды.
+- Закоммитить и задеплоить аналитику, проверить `/stats` и live-события.
 - Живая проверка переключателя RU/EN в Mini App и per-chat menu button после `/language`/Apply.
 - Живая проверка Apply в Telegram: menu/inline и keyboard-сценарий.
 - Живая проверка PNG после принудительной отправки документом (`819253b`); SVG уже проверен пользователем.
@@ -53,6 +59,7 @@
 - Free Render засыпает; self-ping 600 с; первый запуск после сна около минуты.
 - Mini App требует HTTPS; загрузка фото и своих файлов в Mini App не поддерживается.
 - Выбор языка хранится в `MemoryStorage` и теряется после рестарта Render; при следующем `/start` picker появится снова, direct messages используют Telegram fallback.
+- Аналитика опциональна: без `DATABASE_URL` бот работает как раньше. Точного события «ушёл» Telegram не даёт; `dormant` — отсутствие активности 30+ дней, `blocked_at` — только при 403 от Telegram, например при рассылке.
 - Per-chat menu button обновляется после `/start`, `/language` и Apply; если Telegram API недоступен, остаётся глобальная кнопка без `lang`.
 - `WebApp.sendData` не работает для menu/inline Mini App; для них используется серверный `/app/apply` с подписанным `initData`.
 - SVG-caption экранирует HTML; при ошибке caption документ отправляется без подписи.

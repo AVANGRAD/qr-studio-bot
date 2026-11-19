@@ -15,12 +15,13 @@
 
 ## Бот
 
-- `bot/main.py` — запуск webhook/polling, `/healthz`, self-ping, `LanguageMiddleware`, команды default English + `ru` scope.
+- `bot/main.py` — запуск webhook/polling, `/healthz`, self-ping, `LanguageMiddleware`, `AnalyticsMiddleware`, команды default English + `ru` scope.
 - `bot/config.py` — настройки из env.
 - `bot/i18n.py` — словари `ru/en`, `t()`, `resolve_lang()`, `LanguageMiddleware`, локализованные названия каталога и warning-коды.
 - `bot/services.py` — Draft, валидация, рендер, rate limit, caption, language-aware URL, `set_menu_button()` для per-chat `?lang=`.
 - `bot/keyboards.py`, `bot/states.py` — UI и FSM; все подписи через `t()`.
-- `bot/handlers/` — start (picker/`/language`), create, settings, menu, logo, photo, webapp, common; меню готовых иконок и режим «Медальон».
+- `bot/handlers/` — start (picker/`/language`), create, settings, menu, logo, photo, webapp, common, admin (`/stats`); меню готовых иконок и режим «Медальон».
+- `bot/analytics.py` — пул PostgreSQL, схема `analytics`, запись update-событий и расчёт статистики.
 - `bot/errors.py` — глобальный error handler с языком из FSM/Telegram.
 
 ## Рендер
@@ -39,3 +40,10 @@
 - Первый `/start` без `lang` показывает picker; `/language` доступен в любой момент; `clear_flow()` сохраняет `lang`.
 - Mini App выбирает язык URL → `localStorage` → Telegram → browser; серверный каталог и Apply используют `lang`/synthetic `User.language_code`.
 - В Mini App есть переключатель RU/EN; Apply отправляет `lang`, handler сохраняет его в FSM и обновляет per-chat menu button. `/start` и `/language` также обновляют кнопку.
+
+## Аналитика
+
+- `Analytics.connect()` создаёт пул `asyncpg` и схему `analytics`; при ошибке бот продолжает работать без аналитики.
+- `AnalyticsMiddleware` получает `event_from_user`, классифицирует update и асинхронно пишет пользователя и событие; ошибки записи логируются.
+- `analytics.users` — текущее состояние (`first_seen`, `last_seen`, `updates_count`, `starts_count`, `blocked_at`); `analytics.events` — история для DAU/WAU/MAU и топ-событий.
+- `/stats` проверяет `admin_id`, читает агрегаты и форматирует их через `t()`; без `DATABASE_URL` отвечает, что аналитика недоступна.

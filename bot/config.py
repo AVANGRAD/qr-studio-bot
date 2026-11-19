@@ -15,6 +15,7 @@ class Settings:
     webhook_secret: str | None = None
     self_ping_interval: int = 600
     admin_id: int | None = None
+    database_url: str | None = None
     max_content: int = 1200
     max_logo_bytes: int = 6 * 1024 * 1024
     preview_size: int = 640
@@ -41,6 +42,7 @@ class Settings:
         if secret is None and mode == "webhook":
             secret = hashlib.sha256(token.encode("utf-8")).hexdigest()[:40]
         admin = os.getenv("ADMIN_ID", "").strip()
+        database_url = (os.getenv("DATABASE_URL") or "").strip() or None
         return cls(
             bot_token=token,
             mode=mode,
@@ -49,6 +51,7 @@ class Settings:
             webhook_secret=secret,
             self_ping_interval=max(0, int(os.getenv("SELF_PING_INTERVAL_SECONDS", "600"))),
             admin_id=int(admin) if admin.isdigit() else None,
+            database_url=database_url,
             max_content=max(200, int(os.getenv("MAX_CONTENT_LENGTH", "1200"))),
             max_logo_bytes=max(512 * 1024, int(os.getenv("MAX_LOGO_BYTES", str(6 * 1024 * 1024)))),
         )

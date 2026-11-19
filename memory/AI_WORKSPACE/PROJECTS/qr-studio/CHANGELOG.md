@@ -1,3 +1,14 @@
+## 2026-11-19 — аналитика пользователей
+
+- Добавлен `bot/analytics.py`: пул `asyncpg`, создание схемы `analytics`, upsert пользователей и запись событий.
+- `analytics.users` хранит `first_seen`, `last_seen`, `updates_count`, `starts_count`, `last_event`, `blocked_at`; `analytics.events` — тип события, время и безопасные метаданные.
+- `AnalyticsMiddleware` на `dp.update.outer_middleware` пишет активность; `/stats` доступен только при `ADMIN_ID` и показывает всего/новых/активных/неактивных/заблокировавших, языки и топ событий.
+- `asyncpg==0.32.0` добавлен в requirements; `DATABASE_URL` добавлен в `.env.example` и `render.yaml`.
+- Подключение к новому Supabase PostgreSQL 17.12 проверено; таблицы созданы, тестовые записи удалены.
+- `DATABASE_URL` добавлен в Render Environment без изменения остальных переменных.
+- Проверки: pytest 70/70, ruff OK.
+- `ADMIN_ID` пока не задан; commit/deploy аналитики ещё не выполнены.
+
 # Changelog
 
 ## 2026-11-18
