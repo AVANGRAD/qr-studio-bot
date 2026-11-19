@@ -7,7 +7,8 @@
 - Подключение к новому Supabase PostgreSQL 17.12 проверено; таблицы созданы, тестовые записи удалены.
 - `DATABASE_URL` добавлен в Render Environment без изменения остальных переменных.
 - Проверки: pytest 70/70, ruff OK.
-- `ADMIN_ID` пока не задан; commit/deploy аналитики ещё не выполнены.
+- `ADMIN_ID` найден через `getChat` и задан локально/в Render; commit `afe6edf`, Render deploy `dep-dbvf7jjm8hqs73b2r28g` live.
+- Live: `analytics database connected`; synthetic `/stats` от ADMIN_ID прошёл 200 и записал пользователя/событие; ошибок нет.
 
 # Changelog
 

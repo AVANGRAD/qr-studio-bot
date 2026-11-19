@@ -40,7 +40,8 @@
 - [x] `DATABASE_URL` добавлен в `.env`, Render Environment, `.env.example`, `render.yaml`; `asyncpg` — в requirements.
 - [x] Проверки: pytest 70/70, ruff OK.
 - [x] Получить Telegram ID администратора и задать `ADMIN_ID` локально и в Render.
-- [ ] Закоммитить и задеплоить аналитику; проверить `/stats` и live-события.
+- [x] Закоммитить и задеплоить аналитику (`afe6edf`, deploy `dep-dbvf7jjm8hqs73b2r28g`).
+- [x] Live-проверка `/stats` через synthetic webhook: 200, запись в `analytics.users`/`analytics.events`, ошибок нет.
 - [ ] При необходимости добавить рассылку с обработкой 403 для `blocked_at`.
 - [ ] Живая проверка picker/`/language`/EN/Mini App.
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.
