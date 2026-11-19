@@ -74,6 +74,15 @@ def test_svg_is_valid_xml() -> None:
     assert 'width="512"' in payload
 
 
+def test_svg_monogram_escapes_xml() -> None:
+    payload = render_svg(
+        RenderOptions(content="https://example.com", logo_mode="monogram", logo_text="A&B", size=512)
+    )
+    root = ET.fromstring(payload)
+    assert root.tag.endswith("svg")
+    assert "A&amp;B" in payload
+
+
 def test_png_dpi() -> None:
     result = render(RenderOptions(content="https://example.com", size=512))
     buffer = io.BytesIO()

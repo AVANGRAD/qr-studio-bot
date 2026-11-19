@@ -139,6 +139,21 @@ async def test_download_png() -> None:
 
 
 @pytest.mark.asyncio
+async def test_download_svg_escapes_caption() -> None:
+    state = FakeState()
+    message = FakeMessage()
+    message.text = "https://example.com?a=1&b=2"
+    await create.on_text(message, state)
+    callback = FakeCallback()
+    callback.data = "dl:svg"
+    await create.download_svg(callback, state)
+    assert callback.message.documents
+    document = callback.message.documents[0]
+    assert document["document"].data.startswith(b"<svg")
+    assert "&amp;" in document["caption"]
+
+
+@pytest.mark.asyncio
 async def test_webapp_applies_settings() -> None:
     state = FakeState()
     message = FakeMessage()

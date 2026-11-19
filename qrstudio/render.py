@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import html
 import io
 import math
 from dataclasses import dataclass, field, replace
@@ -887,7 +888,7 @@ def render_svg(options: RenderOptions) -> str:
             f'<rect x="{left:.2f}" y="{top:.2f}" width="{size}" height="{size}" rx="{size * 0.28:.2f}" fill="{bg_paint}" stroke="{_svg_color(mix(qr_bg, (0, 0, 0, 255), 0.18))}" stroke-width="{max(1, S // 700)}"/>'
         )
         parts.append(
-            f'<text x="{left + size / 2:.2f}" y="{top + size * 0.62:.2f}" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-weight="700" font-size="{size * 0.46:.2f}" fill="{_svg_color(qr_fg)}">{opts.logo_text}</text>'
+            f'<text x="{left + size / 2:.2f}" y="{top + size * 0.62:.2f}" text-anchor="middle" font-family="Roboto, Arial, sans-serif" font-weight="700" font-size="{size * 0.46:.2f}" fill="{_svg_color(qr_fg)}">{html.escape(opts.logo_text)}</text>'
         )
     parts.append("</svg>")
     return "".join(parts)

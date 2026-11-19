@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import logging
 
 from aiogram import Bot
@@ -9,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, InputMediaPhoto, Message
 
 from ..keyboards import editor_kb
-from ..services import Draft, caption, png_bytes, run_render
+from ..services import Draft, caption, png_bytes, run_render, short
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,7 @@ async def send_document(bot: Bot, chat_id: int, draft: Draft, kind: str) -> None
         await bot.send_document(
             chat_id,
             document=document,
-            caption=f"<b>QR Studio</b> · SVG\n<code>{draft.content[:120]}</code>",
+            caption=f"<b>QR Studio</b> · SVG\n<code>{html.escape(short(draft.content))}</code>",
             parse_mode=ParseMode.HTML,
+            disable_content_type_detection=True,
         )
