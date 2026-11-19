@@ -71,3 +71,22 @@
 - Гипотеза: PNG не был принудительно помечен как документ, и Telegram пытался обработать его как фото; также файл уходил в `from_user.id`, что ломает группы.
 - Исправление: `disable_content_type_detection=True` для PNG, отправка в текущий чат, лог размера файла.
 - Проверка: pytest 49/49, ruff OK; Render live `819253b`; живой Telegram-тест ещё не подтверждён.
+
+## 2026-11-19 — LanguageMiddleware не применялся к handlers
+
+- Симптом: при регистрации `dp.message.middleware(LanguageMiddleware())` и `dp.callback_query.middleware(...)` дочерние routers могли обрабатывать update без установленного языка.
+- Причина: middleware на корневом `dp.message` выполняется только для handlers самого root observer; при include-router обработка уходит в дочерний router.
+- Исправление: `dp.update.outer_middleware(LanguageMiddleware())` после FSM middleware; integration-тест `feed_update` подтверждает `current_lang == "en"`.
+- Проверка: pytest 62/62, ruff OK.
+
+## 2026-11-19 — default-команды оставались русскими
+
+- Симптом: default `set_my_commands` вызывал `t()` без контекста, а `ContextVar` по умолчанию `ru`.
+- Исправление: default-список оборачивается в `use_lang("en")`, затем отдельный вызов с `language_code="ru"`.
+- Проверка: отдельный тест проверяет `Start` для default и `Начать` для `ru`.
+
+## 2026-11-19 — язык терялся при очистке сценария
+
+- Риск: `state.clear()` в handlers удалял бы выбранный `lang`.
+- Исправление: единый `clear_flow()` читает `lang`, очищает state и восстанавливает `{"lang": ...}`; picker использует его же.
+- Проверка: pytest-тест выбора языка и `clear_flow`.

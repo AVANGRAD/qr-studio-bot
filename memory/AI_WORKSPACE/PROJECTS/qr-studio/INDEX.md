@@ -12,3 +12,4 @@
 - [Итог: Apply в Mini App](summaries/2026-11-19-miniapp-apply.md)
 - [Итог: скачивание PNG/SVG](summaries/2026-11-19-downloads.md)
 - [Итог: PNG-документ](summaries/2026-11-19-png-download.md)
+- [Итог: локализация RU/EN](summaries/2026-11-19-i18n.md)

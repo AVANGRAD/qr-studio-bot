@@ -78,6 +78,19 @@
 - Проверки: pytest 42/42, ruff OK, `node --check` OK, scans 262/262.
 - Feature-коммит `0e01ca3`, docs `e12f6f5`; Render deploy live; `/healthz`, `/app`, catalog 200; live-каталог 52/24/14/19/25; webhook pending 0.
 
+## 2026-11-19 — локализация RU/EN и выбор языка
+
+- Добавлен `bot/i18n.py`: словари `ru/en`, `t()`, `resolve_lang()`, `LanguageMiddleware`, локализованные названия каталога и warning-коды.
+- Первый `/start` без сохранённого языка показывает RU/EN picker; `/language` меняет язык; `clear_flow()` сохраняет выбор.
+- Локализованы handlers, клавиатуры, ошибки, rate-limit, caption PNG/SVG, сервисные сообщения, каталог и Mini App.
+- `Draft.logo_emblem` отделяет ключ встроенной иконки от старого русского `logo_label`; `RenderResult.warning_codes` локализует предупреждения.
+- Mini App: `?lang=`, `/app/catalog.json?lang=`, Apply с synthetic `User.language_code`; JS выбирает URL → Telegram → browser.
+- `LanguageMiddleware` зарегистрирован на `dp.update.outer_middleware`, иначе дочерние routers обходили middleware.
+- Telegram-команды: default English + `ru` scope; исправлен захват ContextVar.
+- Удалён устаревший `bot/texts.py`; добавлен `tests/test_i18n.py`.
+- Проверки: pytest 62/62, ruff OK, `node --check webapp/app.js` OK, scans 262/262.
+- Коммит `3f1062f`, Render live `3f1062f` (`dep-dbvcimjrjlhs73ed143g`); `/healthz`, `/app`, EN/RU catalog и preview 200, Apply без initData 400, команды EN/RU, webhook pending 0.
+
 ## 2026-11-19 — PNG download принудительно документом
 
 - PNG теперь отправляется с `disable_content_type_detection=True`, чтобы Telegram не обрабатывал файл как фото.

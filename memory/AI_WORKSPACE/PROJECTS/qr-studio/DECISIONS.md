@@ -33,3 +33,12 @@
 
 - `sendData` не используется как основной путь: menu/inline Mini App его не поддерживают. Серверный Apply проверяет HMAC `WebAppData` и `auth_date` (6 часов), затем передаёт synthetic `web_app_data` в тот же dispatcher.
 - `app.js` подключается с cache-bust (`?v=apply1`), иначе Telegram WebView может держать старый JS после деплоя.
+
+- Полная локализация `ru/en` выбрана пользователем; язык выбирается при первом `/start`, а не только автоматически по Telegram.
+- Fallback `resolve_lang()`: без кода — `ru`; `en*` — `en`; `ru/uk/be/kk` — `ru`; неизвестный непустой — `en`. Это компромисс между русскоязычной аудиторией и международным default.
+- Язык хранится в FSM как `lang`, чтобы выбор пользователя переживал смену сценария; `clear_flow()` сохраняет его. Ограничение `MemoryStorage` принято осознанно: после рестарта picker появится снова.
+- `LanguageMiddleware` стоит на `dp.update.outer_middleware` после FSM: это единственный способ применить язык ко всем дочерним routers, включая synthetic update из Mini App.
+- Mini App выбирает язык URL → Telegram → browser, чтобы `/app` мог передать выбор бота, а постоянная menu button использовала Telegram.
+- Telegram-команды: default English + `ru` scope; picker не меняет scope уже открытого чата, это отмечено как ограничение.
+- `Draft.logo_emblem` добавлен, чтобы английская подпись не зависела от русской `logo_label`; старые draft остаются совместимыми.
+- `RenderResult.warning_codes` добавлен, чтобы рендер не зависел от языка, а caption локализовал предупреждения.
