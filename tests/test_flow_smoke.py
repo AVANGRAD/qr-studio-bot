@@ -4,10 +4,12 @@ import io
 from types import SimpleNamespace
 
 import pytest
-from aiogram.types import User
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import BufferedInputFile, User
 from PIL import Image
 
 from bot.handlers import create, logo, photo, settings, webapp
+from bot.handlers.common import _send_document
 from bot.services import Draft
 from bot.states import Flow
 
@@ -151,6 +153,22 @@ async def test_download_svg_escapes_caption() -> None:
     document = callback.message.documents[0]
     assert document["document"].data.startswith(b"<svg")
     assert "&amp;" in document["caption"]
+
+
+@pytest.mark.asyncio
+async def test_document_caption_fallback() -> None:
+    class CaptionBot:
+        def __init__(self) -> None:
+            self.calls: list[str | None] = []
+
+        async def send_document(self, chat_id, document, caption=None, **kwargs) -> None:
+            if caption is not None:
+                raise TelegramBadRequest(method=None, message="can't parse entities")
+            self.calls.append(caption)
+
+    bot = CaptionBot()
+    await _send_document(bot, 42, BufferedInputFile(b"svg", filename="qr.svg"), "<b>QR</b>")
+    assert bot.calls == [None]
 
 
 @pytest.mark.asyncio

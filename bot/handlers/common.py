@@ -62,22 +62,36 @@ async def refresh_preview(callback: CallbackQuery, state: FSMContext, draft: Dra
     await edit_preview(callback, state, draft)
 
 
+async def _send_document(bot: Bot, chat_id: int, document: BufferedInputFile, text: str, **kwargs) -> None:
+    try:
+        await bot.send_document(
+            chat_id,
+            document=document,
+            caption=text,
+            parse_mode=ParseMode.HTML,
+            **kwargs,
+        )
+    except TelegramBadRequest as exc:
+        logger.warning("document caption rejected, retrying without caption: %s", exc)
+        await bot.send_document(chat_id, document=document, **kwargs)
+
+
 async def send_document(bot: Bot, chat_id: int, draft: Draft, kind: str) -> None:
     if kind == "png":
         from ..services import png_bytes as make_png
 
         payload, result = await run_render(make_png, draft, draft.size, timeout=45)
         document = BufferedInputFile(payload, filename=f"qr-{draft.size}.png")
-        await bot.send_document(chat_id, document=document, caption=caption(draft, result), parse_mode=ParseMode.HTML)
+        await _send_document(bot, chat_id, document, caption(draft, result))
     else:
         from ..services import svg_bytes
 
         payload = await run_render(svg_bytes, draft, timeout=45)
         document = BufferedInputFile(payload.encode("utf-8"), filename=f"qr-{draft.size}.svg")
-        await bot.send_document(
+        await _send_document(
+            bot,
             chat_id,
-            document=document,
-            caption=f"<b>QR Studio</b> · SVG\n<code>{html.escape(short(draft.content))}</code>",
-            parse_mode=ParseMode.HTML,
+            document,
+            f"<b>QR Studio</b> · SVG\n<code>{html.escape(short(draft.content))}</code>",
             disable_content_type_detection=True,
         )
