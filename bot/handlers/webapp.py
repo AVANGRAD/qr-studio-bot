@@ -46,9 +46,10 @@ async def on_web_app_data(message: Message, state: FSMContext) -> None:
         await message.answer("Настройки сохранены. Пришли ссылку или текст — применю их.")
         return
 
-    if not apply_settings(draft, payload):
+    if not sanitize_settings(payload):
         await message.answer("Настройки не изменились. Попробуй выбрать другой вариант.")
         return
+    apply_settings(draft, payload)
     await send_preview(message, state, draft, size=640)
 
 

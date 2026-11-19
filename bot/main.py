@@ -96,7 +96,7 @@ async def run_webhook(bot: Bot, dp: Dispatcher, settings: Settings) -> None:
     app = web.Application()
     app.router.add_get("/", health)
     app.router.add_get("/healthz", health)
-    setup_miniapp(app)
+    setup_miniapp(app, bot=bot, dispatcher=dp)
     SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=settings.webhook_secret).register(app, path=path)
     setup_application(app, dp, bot=bot)
 

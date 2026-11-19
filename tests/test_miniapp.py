@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from bot.miniapp import catalog, preview_bytes, thumb_bytes
+import hashlib
+import hmac
+import json
+import time
+from types import SimpleNamespace
+from urllib.parse import urlencode
+
+import pytest
+from aiohttp import web
+from aiohttp.test_utils import TestClient, TestServer
+
+from bot.miniapp import catalog, preview_bytes, setup, thumb_bytes, validate_init_data
 from bot.services import Draft, webapp_url
 
 
@@ -35,3 +46,69 @@ def test_webapp_url() -> None:
     assert "shape=leaf" in url
     assert "palette=wood" in url
     assert "size=512" in url
+
+
+TOKEN = "123456:test-token"
+
+
+def _signed_init_data(user_id: int, auth_date: int | None = None) -> str:
+    pairs = {
+        "auth_date": str(auth_date or int(time.time())),
+        "query_id": "test-query",
+        "user": json.dumps({"id": user_id, "first_name": "Test"}, separators=(",", ":")),
+    }
+    check_string = "\n".join(f"{key}={value}" for key, value in sorted(pairs.items()))
+    secret = hmac.new(b"WebAppData", TOKEN.encode(), hashlib.sha256).digest()
+    signature = hmac.new(secret, check_string.encode(), hashlib.sha256).hexdigest()
+    return urlencode({**pairs, "hash": signature})
+
+
+def test_validate_init_data() -> None:
+    init_data = _signed_init_data(42)
+    parsed = validate_init_data(init_data, TOKEN)
+    assert parsed["user"] == '{"id":42,"first_name":"Test"}'
+
+
+def test_validate_init_data_rejects_bad_signature() -> None:
+    with pytest.raises(ValueError):
+        validate_init_data(_signed_init_data(42) + "tampered", TOKEN)
+
+
+def test_validate_init_data_rejects_expired() -> None:
+    with pytest.raises(ValueError):
+        validate_init_data(_signed_init_data(42, int(time.time()) - 7 * 3600), TOKEN)
+
+
+@pytest.mark.asyncio
+async def test_apply_endpoint_dispatches_to_bot() -> None:
+    class FakeDispatcher:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str, int]] = []
+
+        async def feed_update(self, bot, update) -> None:
+            self.calls.append((bot.token, update.message.web_app_data.data, update.message.chat.id))
+
+    dispatcher = FakeDispatcher()
+    app = web.Application()
+    setup(app, bot=SimpleNamespace(token=TOKEN), dispatcher=dispatcher)
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    try:
+        response = await client.post(
+            "/app/apply",
+            json={"init_data": _signed_init_data(42), "data": {"shape": "leaf", "size": 512}},
+        )
+        assert response.status == 200
+        assert dispatcher.calls
+        token, raw, chat_id = dispatcher.calls[0]
+        assert token == TOKEN
+        assert json.loads(raw) == {"shape": "leaf", "size": 512}
+        assert chat_id == 42
+
+        bad = await client.post(
+            "/app/apply",
+            json={"init_data": _signed_init_data(42) + "tampered", "data": {"shape": "leaf"}},
+        )
+        assert bad.status == 401
+    finally:
+        await client.close()

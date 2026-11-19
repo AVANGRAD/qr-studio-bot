@@ -227,11 +227,7 @@
     catalog.presets.forEach((item) => { nameMaps.presets[item.key] = item.name; });
   }
 
-  function applySelection() {
-    if (!tg || typeof tg.sendData !== "function") {
-      el.status.textContent = "Открой редактор через Telegram, чтобы применить настройки.";
-      return;
-    }
+  async function applySelection() {
     const payload = {
       shape: state.shape,
       module_style: state.module_style,
@@ -239,6 +235,26 @@
       palette: state.palette,
       size: state.size
     };
+    if (tg && tg.initData) {
+      el.status.textContent = "Применяю настройки…";
+      try {
+        const response = await fetch("/app/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ init_data: tg.initData, data: payload })
+        });
+        if (!response.ok) throw new Error("apply");
+        el.status.textContent = "Готово. Возвращаюсь в бота…";
+        window.setTimeout(() => tg.close(), 180);
+      } catch (error) {
+        el.status.textContent = "Не удалось применить настройки. Попробуй ещё раз.";
+      }
+      return;
+    }
+    if (!tg || typeof tg.sendData !== "function") {
+      el.status.textContent = "Открой редактор через Telegram, чтобы применить настройки.";
+      return;
+    }
     try {
       tg.sendData(JSON.stringify(payload));
       el.status.textContent = "Готово. Возвращаюсь в бота…";
