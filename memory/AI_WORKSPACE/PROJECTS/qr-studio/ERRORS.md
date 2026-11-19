@@ -102,4 +102,17 @@
 - Симптом: `sendMessage(ADMIN_ID)` через support-токен возвращает `400 Bad Request: chat not found`.
 - Причина: администратор ещё не открыл `@QUaRc0DeSupport_bot` и не нажал `/start`; Telegram не разрешает боту инициировать чат.
 - Решение: администратор должен один раз нажать `/start` в support-боте; после этого пересылка тикетов работает.
-- Проверка: ожидает действия пользователя.
+- Проверка: 2026-11-19 `getChat` для `ADMIN_ID` через support-токен вернул 200; чат доступен.
+
+## 2026-11-19 — Supabase TLS: self-signed certificate in certificate chain
+
+- Симптом: `ssl="require"` работал, но не проверял сертификат; `ssl=True`/`verify-full` падал с `SSLCertVerificationError: self-signed certificate in certificate chain`.
+- Причина: Supabase pooler отдаёт цепочку, которую системный trust store не знает.
+- Решение: скачан публичный Supabase CA `certs/prod-ca-2021.crt`, добавлен `bot/db.py::ssl_context()`; аналитика и поддержка используют его.
+- Проверка: подключение с CA и hostname успешно; live `analytics database connected`, `support database connected`.
+
+## 2026-11-19 — app-роль не должна выполнять DDL
+
+- Риск: `Analytics.connect()`/`SupportStore.connect()` создавали схемы/таблицы при старте; least-privilege роль `qr_app` без `CREATE` не смогла бы запуститься.
+- Решение: runtime DDL удалён; добавлен `scripts/migrate.py`, схемы применяются административной ролью. `qr_app` имеет только DML/sequence-права.
+- Проверка: `qr_app` подключается, читает `analytics.users`/`support.tickets`; live-логи без ошибок.

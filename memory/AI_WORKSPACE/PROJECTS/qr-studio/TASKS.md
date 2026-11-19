@@ -42,17 +42,52 @@
 - [x] `/stats`: добавлены всего событий и топ событий за всё время.
 - [x] Support-бот: отдельный токен, `/support` в основном боте, пересылка тикетов админу, reply обратно пользователю, `support.tickets`.
 - [x] Support-тесты и UI-команда `/support`; pytest 74/74, ruff OK.
-- [x] `SUPPORT_BOT_TOKEN` добавлен в `.env`, `.env.example`, `render.yaml`, Render Environment; таблица `support.tickets` проверена.
+- [x] `SUPPORT_BOT_TOKEN` добавлен в `.env`, `.env.example`, `render.yaml`, Render Environment; таблица `support.tickets` проверена; `SUPPORT_WEBHOOK_SECRET` ротирован 19.11.
 - [x] Получить Telegram ID администратора и задать `ADMIN_ID` локально и в Render.
 - [x] Закоммитить и задеплоить аналитику (`afe6edf`, deploy `dep-dbvf7jjm8hqs73b2r28g`).
 - [x] Live-проверка `/stats` через synthetic webhook: 200, запись в `analytics.users`/`analytics.events`, ошибок нет.
 - [x] Задеплоить support/all-time (`f1f8f32`, deploy `dep-dbvfl1mq1p3s738ero7g`); live `/healthz` `support:true`, оба webhook pending 0, support route 200, `/stats` synthetic 200.
-- [ ] Администратору нажать `/start` в `@QUaRc0DeSupport_bot`; после этого проверить live-тикет.
+- [x] Администратор доступен в `@QUaRc0DeSupport_bot` (`getChat` 200).
+- [ ] Проверить live-тикет вторым пользователем.
 - [ ] При необходимости добавить рассылку с обработкой 403 для `blocked_at`.
 - [ ] Живая проверка picker/`/language`/EN/Mini App.
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.
 - [ ] Живая проверка PNG после `disable_content_type_detection` (`819253b`); SVG подтверждён пользователем.
 - [ ] Живая проверка Telegram: фото, фото + логотип, фото-первый сценарий, иконки и «Медальон».
+
+## Безопасность (19.11.2026)
+
+- [x] Webhook path отделён от header-секрета; лог маскирован; тест `test_security.py`.
+- [x] Ротированы `WEBHOOK_SECRET` и `SUPPORT_WEBHOOK_SECRET`; старые пути больше не работают.
+- [x] Создана least-privilege роль `qr_app` без CREATEDB/CREATEROLE; права только на `analytics`/`support`.
+- [x] Убран runtime DDL из приложения; добавлен `scripts/migrate.py` и инструкция в README.
+- [x] TLS к Supabase проверяет CA и hostname (`certs/prod-ca-2021.crt`, `bot/db.py`).
+- [x] Support rate limit 5/мин, 30/час, 100/день; privacy-тексты обновлены.
+- [x] Mini App: apply rate limit, preview rate limit + render semaphore/timeout, content-type, future auth_date.
+- [x] `/stats` только в private-чате.
+- [x] Проверки: pytest 81/81, ruff OK; live `/healthz`/`/app` 200, webhook 200 с секретом и 401 без, pending 0.
+- [x] Коммит `e6b592b`, deploy `dep-dbvhh1ek1f9s73cj5vt0` live с ролью `qr_app`.
+- [ ] Владелец: при желании включить 2FA/secret scanning/push protection в GitHub, Render, Supabase и Telegram.
+- [ ] Владелец: проверить, что администратор нажал `/start` в support-боте, и пройти live-тикет.
+- [ ] При необходимости вынести rate-limit счётчики в Redis/БД (сейчас in-memory, сбрасываются рестартом).
+
+## Продвижение (19.11.2026)
+
+- [x] Аудит профиля: `getMyDescription`/`getMyShortDescription` пустые, `getUserProfilePhotos` 0.
+- [x] Заданы описания через Bot API: short 82 симв., description 403 симв.
+- [x] Сгенерированы `assets/promo/avatar.png` (1024) и `avatar-512.png`.
+- [x] Создан `documentation/PROMOTION.md`: позиционирование, каталоги, тексты, статусы.
+- [x] 50bots: заявка «QR Studio — QR-коды в Telegram» принята, модерация.
+- [x] BotPulse: карточка отправлена на модерацию.
+- [x] Catalog Telegram: карточка «QR Studio» принята, модерация.
+- [x] Промо-картинка `assets/promo/showcase.png` (6 пресетов, 1200×1000).
+- [ ] Владелец: `/setuserpic` в BotFather → `assets/promo/avatar.png`.
+- [ ] Владелец: подтвердить владение в BotPulse через @RBSFamilySupportBot.
+- [ ] Владелец: подтвердить владение в 50bots через @verif_50_bot.
+- [ ] Владелец: пройти капчу на tlg.me/add и telegram.menu/add.
+- [ ] Владелец: создать публичный канал и дать боту право публикации.
+- [ ] Учитывать deep-link `?start=<source>` в `/start` для атрибуции каталогов.
+- [ ] Кнопка «Поделиться ботом» и inline-режим.
 
 ## Идеи
 

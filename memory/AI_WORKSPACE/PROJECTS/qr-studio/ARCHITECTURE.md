@@ -16,13 +16,15 @@
 ## Бот
 
 - `bot/main.py` — запуск webhook/polling, `/healthz`, self-ping, `LanguageMiddleware`, `AnalyticsMiddleware`, команды default English + `ru` scope.
-- `bot/config.py` — настройки из env.
+- `bot/config.py` — настройки из env; webhook path выводится отдельно от header-секрета.
+- `bot/db.py` — TLS-контекст Supabase CA; `bot/abuse.py` — sliding-window limiter для preview.
+- `scripts/migrate.py` — миграции схем `analytics`/`support` от административной роли.
 - `bot/i18n.py` — словари `ru/en`, `t()`, `resolve_lang()`, `LanguageMiddleware`, локализованные названия каталога и warning-коды.
 - `bot/services.py` — Draft, валидация, рендер, rate limit, caption, language-aware URL, `set_menu_button()` для per-chat `?lang=`.
 - `bot/keyboards.py`, `bot/states.py` — UI и FSM; все подписи через `t()`.
 - `bot/handlers/` — start (picker/`/language`), create, settings, menu, logo, photo, webapp, common, admin (`/stats`); меню готовых иконок и режим «Медальон».
-- `bot/analytics.py` — пул PostgreSQL, схема `analytics`, запись update-событий и расчёт статистики, включая all-time события.
-- `bot/support.py` — второй `Bot`/`Dispatcher` на `SUPPORT_BOT_TOKEN`, собственный webhook `/support/webhook/<secret>`, пересылка тикетов в `ADMIN_ID`, reply-маршрутизация и `support.tickets`.
+- `bot/analytics.py` — пул PostgreSQL, запись update-событий и расчёт статистики, включая all-time события; схемы создаются миграцией.
+- `bot/support.py` — второй `Bot`/`Dispatcher` на `SUPPORT_BOT_TOKEN`, собственный webhook `/support/webhook/<hash>`, rate limit и пересылка тикетов в `ADMIN_ID`, reply-маршрутизация и `support.tickets`.
 - `bot/errors.py` — глобальный error handler с языком из FSM/Telegram.
 
 ## Рендер
@@ -44,14 +46,14 @@
 
 ## Аналитика
 
-- `Analytics.connect()` создаёт пул `asyncpg` и схему `analytics`; при ошибке бот продолжает работать без аналитики.
+- `Analytics.connect()` создаёт пул `asyncpg`; схемы/таблицы применяет `scripts/migrate.py`. При ошибке бот продолжает работать без аналитики.
 - `AnalyticsMiddleware` получает `event_from_user`, классифицирует update и асинхронно пишет пользователя и событие; ошибки записи логируются.
 - `analytics.users` — текущее состояние (`first_seen`, `last_seen`, `updates_count`, `starts_count`, `blocked_at`); `analytics.events` — история для DAU/WAU/MAU и топ-событий.
 - `/stats` проверяет `admin_id`, читает агрегаты (7 дней и всё время) и форматирует их через `t()`; без `DATABASE_URL` отвечает, что аналитика недоступна.
 
 ## Поддержка
 
-- `SupportBot` создаёт отдельный `Bot` и `Dispatcher`, обслуживается тем же aiohttp-сервером по `/support/webhook/<secret>`.
+- `SupportBot` создаёт отдельный `Bot` и `Dispatcher`, обслуживается тем же aiohttp-сервером по `/support/webhook/<hash>`; header-секрет проверяется отдельно.
 - Пользовательские сообщения пересылаются администратору; mapping `admin_message_id → user_id` хранится в `support.tickets` (или в памяти без БД).
 - Администратор отвечает reply на пересланное сообщение или карточку тикета; `copy_message` доставляет ответ пользователю.
 - `SUPPORT_BOT_TOKEN` опционален: без него поддержка не регистрируется, основной бот работает как раньше.

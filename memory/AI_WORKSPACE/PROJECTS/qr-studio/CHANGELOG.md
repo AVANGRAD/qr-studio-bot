@@ -1,3 +1,13 @@
+## 2026-11-19 — security hardening и least-privilege DB
+
+- Webhook path отделён от header-секрета (`SHA256`), лог маскирован; `WEBHOOK_SECRET` и `SUPPORT_WEBHOOK_SECRET` ротированы.
+- Создана роль `qr_app` без `CREATEDB`/`CREATEROLE`, с правами только на `analytics`/`support`; `DATABASE_URL` переключён на неё.
+- Runtime DDL убран из приложения; добавлен `scripts/migrate.py`.
+- TLS к Supabase проверяет CA и hostname (`certs/prod-ca-2021.crt`, `bot/db.py`).
+- Support: 5/мин, 30/час, 100/день; Mini App: apply/preview limits, render semaphore/timeouts, content-type и future `auth_date`; `/stats` только private.
+- Проверки: pytest 81/81, ruff OK; live `/healthz`/`/app` 200, webhook 200 с секретом и 401 без, pending 0; `analytics`/`support` DB connected.
+- Коммит `e6b592b`, deploy `dep-dbvhh1ek1f9s73cj5vt0` live.
+
 # Changelog
 
 ## 2026-11-19 — поддержка и статистика за всё время
