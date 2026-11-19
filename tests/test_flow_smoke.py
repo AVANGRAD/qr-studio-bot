@@ -39,6 +39,7 @@ class FakeState:
 class FakeMessage:
     def __init__(self) -> None:
         self.message_id = 100
+        self.chat = SimpleNamespace(id=42)
         self.from_user = User(id=42, is_bot=False, first_name="Test")
         self.text = ""
         self.web_app_data = None
@@ -136,8 +137,10 @@ async def test_download_png() -> None:
     callback.data = "dl:png"
     await create.download_png(callback, state)
     assert callback.message.documents
-    document = callback.message.documents[0]["document"]
-    assert document.data.startswith(b"\x89PNG")
+    document = callback.message.documents[0]
+    assert document["document"].data.startswith(b"\x89PNG")
+    assert document["disable_content_type_detection"] is True
+    assert document["chat_id"] == 42
 
 
 @pytest.mark.asyncio

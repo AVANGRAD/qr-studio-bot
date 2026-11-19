@@ -103,8 +103,9 @@ async def download_png(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer(NO_DRAFT, show_alert=True)
         return
     await callback.answer("Собираю PNG…")
+    chat_id = callback.message.chat.id if callback.message else callback.from_user.id
     try:
-        await send_document(callback.bot, callback.from_user.id, draft, "png")
+        await send_document(callback.bot, chat_id, draft, "png")
     except Exception:
         logger.exception("png download failed")
         await callback.message.answer(RENDER_ERROR)
@@ -117,8 +118,9 @@ async def download_svg(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer(NO_DRAFT, show_alert=True)
         return
     await callback.answer("Собираю SVG…")
+    chat_id = callback.message.chat.id if callback.message else callback.from_user.id
     try:
-        await send_document(callback.bot, callback.from_user.id, draft, "svg")
+        await send_document(callback.bot, chat_id, draft, "svg")
     except Exception:
         logger.exception("svg download failed")
         await callback.message.answer(RENDER_ERROR)

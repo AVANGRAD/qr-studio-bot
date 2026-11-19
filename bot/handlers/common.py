@@ -81,8 +81,15 @@ async def send_document(bot: Bot, chat_id: int, draft: Draft, kind: str) -> None
         from ..services import png_bytes as make_png
 
         payload, result = await run_render(make_png, draft, draft.size, timeout=45)
+        logger.info("sending PNG document: %s bytes, %s px", len(payload), draft.size)
         document = BufferedInputFile(payload, filename=f"qr-{draft.size}.png")
-        await _send_document(bot, chat_id, document, caption(draft, result))
+        await _send_document(
+            bot,
+            chat_id,
+            document,
+            caption(draft, result),
+            disable_content_type_detection=True,
+        )
     else:
         from ..services import svg_bytes
 
