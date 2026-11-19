@@ -21,14 +21,15 @@
 - Фото-поддержка в PNG/SVG; `Draft.photo_bytes`, `prepare_uploaded_photo`, `Flow.photo`, `bot/handlers/photo.py`, кнопки «Фото + QR»/«Фото»; загрузка до и после текста.
 - `pytest`: 49 тестов проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
 - `scripts/check_scans.py`: 262/262 QR декодируются, включая 52 формы в figure-режиме, 25 пресетов, 12 встроенных иконок и фото-сценарии.
-- GitHub HEAD: `3b1b1d8`; Apply fix `6c35f98`, cache-bust `ed3639e`, download fix `457c137`/`3b1b1d8`; `master` запушен.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `3b1b1d8`.
+- PNG download теперь принудительно отправляется как документ (`disable_content_type_detection=True`) и в текущий чат, а не в `callback.from_user.id`; это устраняет авто-обработку PNG как фото и сбои в группах.
+- GitHub HEAD: `819253b`; Apply fix `6c35f98`, cache-bust `ed3639e`, download fixes `457c137`/`3b1b1d8`/`819253b`; `master` запушен.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `819253b`.
 - `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; live-каталог 52/24/14/19/25; live `app.js` содержит `/app/apply`, HTML подключает `?v=apply1`; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
 
 - Живая проверка Apply в Telegram: menu/inline и keyboard-сценарий.
-- Живая проверка PNG/SVG после исправления caption.
+- Живая проверка PNG после принудительной отправки документом (`819253b`); SVG уже проверен пользователем.
 - Живая проверка в Telegram: фото, фото + логотип, фото-первый сценарий, новые формы/узоры/глаза, встроенные иконки и режим «Медальон».
 - Проверить экстремальные комбинации вроде `frog + flower + spark` на 512–640 px: локально они могут не декодироваться, на 1024 px проходят.
 - Проверить, что новая карточка фото не закрывает важный объект; при необходимости изменить `photo_card`/`photo_inset`.

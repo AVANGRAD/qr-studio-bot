@@ -77,3 +77,11 @@
 - Mini App: 134 плитки, cache-bust `?v=variety1`; тесты каталога обновлены.
 - Проверки: pytest 42/42, ruff OK, `node --check` OK, scans 262/262.
 - Feature-коммит `0e01ca3`, docs `e12f6f5`; Render deploy live; `/healthz`, `/app`, catalog 200; live-каталог 52/24/14/19/25; webhook pending 0.
+
+## 2026-11-19 — PNG download принудительно документом
+
+- PNG теперь отправляется с `disable_content_type_detection=True`, чтобы Telegram не обрабатывал файл как фото.
+- Документ отправляется в текущий чат (`callback.message.chat.id`) с fallback на `from_user.id`; это исправляет сценарий группы.
+- Добавлена запись размера PNG в лог для диагностики.
+- Проверки: pytest 49/49, ruff OK.
+- Коммит `819253b`; Render live `819253b`; живой тест PNG за пользователем.

@@ -64,3 +64,10 @@
 - Причина: SVG-caption подставлял `draft.content` в HTML без экранирования; Telegram отклонял `&` в ссылках. XML-мононограмма также не экранировалась.
 - Исправление: `html.escape(short(...))`, XML-escape `logo_text`, `disable_content_type_detection=True`, fallback без caption.
 - Проверка: pytest 49/49, scans 262/262; живой Telegram-тест за пользователем.
+
+## 2026-11-19 — PNG download всё ещё не отдаёт файл
+
+- Симптом: после исправления SVG кнопка «Скачать PNG» всё ещё не работает.
+- Гипотеза: PNG не был принудительно помечен как документ, и Telegram пытался обработать его как фото; также файл уходил в `from_user.id`, что ломает группы.
+- Исправление: `disable_content_type_detection=True` для PNG, отправка в текущий чат, лог размера файла.
+- Проверка: pytest 49/49, ruff OK; Render live `819253b`; живой Telegram-тест ещё не подтверждён.

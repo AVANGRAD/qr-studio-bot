@@ -23,8 +23,9 @@
 - [x] Проверить diff, закоммитить, запушить и задеплоить расширение (`0e01ca3`, docs `e12f6f5`).
 - [x] Apply fix: подписанный `POST /app/apply`, HMAC initData, synthetic `web_app_data`, cache-bust `?v=apply1` (`6c35f98`, `ed3639e`).
 - [x] Download fix: HTML-экранирование SVG-caption, XML-escape мононограммы, fallback без caption (`457c137`, `3b1b1d8`).
+- [x] PNG download: принудительная отправка документом, текущий чат, лог размера (`819253b`).
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.
-- [ ] Живая проверка PNG/SVG после download fix.
+- [ ] Живая проверка PNG после `disable_content_type_detection` (`819253b`); SVG подтверждён пользователем.
 - [ ] Живая проверка Telegram: фото, фото + логотип, фото-первый сценарий, иконки и «Медальон».
 
 ## Идеи
