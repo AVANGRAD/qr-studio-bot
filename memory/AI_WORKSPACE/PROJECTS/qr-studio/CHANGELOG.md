@@ -91,6 +91,16 @@
 - Проверки: pytest 62/62, ruff OK, `node --check webapp/app.js` OK, scans 262/262.
 - Коммит `3f1062f`, docs `1d108fd`; Render live `3f1062f` (`dep-dbvcimjrjlhs73ed143g`), docs redeploy `1d108fd` (`dep-dbvck6p7lnhs739caeu0`); `/healthz`, `/app`, EN/RU catalog и preview 200, Apply без initData 400, команды EN/RU, webhook pending 0.
 
+## 2026-11-19 — переключение языка в Mini App
+
+- В шапку Mini App добавлен RU/EN toggle; интерфейс и каталог перерисовываются без перезагрузки.
+- `app.js` выбирает язык URL → `localStorage` → Telegram → browser, сохраняет выбор и отправляет `lang` в Apply.
+- `on_web_app_data` сохраняет `lang` в FSM, применяет его к preview/ответам и обновляет per-chat menu button.
+- `set_menu_button()` вынесен в `bot/services.py`; `/start`, `/language` и Apply обновляют `MenuButtonWebApp?lang=`.
+- Добавлены тесты языка из payload и per-chat menu button; проверки: pytest 64/64, ruff OK, `node --check` OK, scans 262/262.
+- Headless Chromium: EN→RU toggle, каталог `Квадрат`, Apply payload `lang=ru`.
+- Изменения пока не закоммичены/не задеплоены.
+
 ## 2026-11-19 — PNG download принудительно документом
 
 - PNG теперь отправляется с `disable_content_type_detection=True`, чтобы Telegram не обрабатывал файл как фото.

@@ -18,7 +18,7 @@
 - `bot/main.py` — запуск webhook/polling, `/healthz`, self-ping, `LanguageMiddleware`, команды default English + `ru` scope.
 - `bot/config.py` — настройки из env.
 - `bot/i18n.py` — словари `ru/en`, `t()`, `resolve_lang()`, `LanguageMiddleware`, локализованные названия каталога и warning-коды.
-- `bot/services.py` — Draft, валидация, рендер, rate limit, caption, language-aware URL.
+- `bot/services.py` — Draft, валидация, рендер, rate limit, caption, language-aware URL, `set_menu_button()` для per-chat `?lang=`.
 - `bot/keyboards.py`, `bot/states.py` — UI и FSM; все подписи через `t()`.
 - `bot/handlers/` — start (picker/`/language`), create, settings, menu, logo, photo, webapp, common; меню готовых иконок и режим «Медальон».
 - `bot/errors.py` — глобальный error handler с языком из FSM/Telegram.
@@ -37,4 +37,5 @@
 
 - `LanguageMiddleware` на `dp.update.outer_middleware` читает FSM `lang`, затем `event_from_user.language_code`; выставляет `ContextVar current_lang`.
 - Первый `/start` без `lang` показывает picker; `/language` доступен в любой момент; `clear_flow()` сохраняет `lang`.
-- Mini App выбирает язык URL → Telegram → browser; серверный каталог и Apply используют `lang`/synthetic `User.language_code`.
+- Mini App выбирает язык URL → `localStorage` → Telegram → browser; серверный каталог и Apply используют `lang`/synthetic `User.language_code`.
+- В Mini App есть переключатель RU/EN; Apply отправляет `lang`, handler сохраняет его в FSM и обновляет per-chat menu button. `/start` и `/language` также обновляют кнопку.

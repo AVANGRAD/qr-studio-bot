@@ -191,6 +191,29 @@ async def test_webapp_applies_settings() -> None:
 
 
 @pytest.mark.asyncio
+async def test_webapp_applies_language_from_payload() -> None:
+    class MenuBot:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        async def set_chat_menu_button(self, **kwargs) -> None:
+            self.calls.append(kwargs)
+
+    state = FakeState()
+    message = FakeMessage()
+    message.text = "https://example.com"
+    await create.on_text(message, state)
+    message.web_app_data = SimpleNamespace(
+        data='{"shape":"leaf","module_style":"dot","eye_style":"circle","palette":"wood","size":512,"lang":"en"}'
+    )
+    bot = MenuBot()
+    await webapp.on_web_app_data(message, state, bot)
+    assert (await state.get_data())["lang"] == "en"
+    assert "Pattern: Dot" in message.photos[-1]["caption"]
+    assert bot.calls[0]["menu_button"].web_app.url.endswith("/app?lang=en")
+
+
+@pytest.mark.asyncio
 async def test_webapp_rejects_bad_payload() -> None:
     state = FakeState()
     message = FakeMessage()

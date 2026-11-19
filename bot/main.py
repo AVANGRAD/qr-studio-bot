@@ -7,9 +7,8 @@ import time
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import BotCommand, MenuButtonWebApp, WebAppInfo
+from aiogram.types import BotCommand
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import ClientSession, web
 
@@ -18,7 +17,7 @@ from .errors import error_handler
 from .handlers import create, logo, menu, photo, settings, start, webapp
 from .i18n import LanguageMiddleware, t, use_lang
 from .miniapp import setup as setup_miniapp
-from .services import webapp_entry_url
+from .services import set_menu_button
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("aiogram.event").setLevel(logging.WARNING)
@@ -69,16 +68,6 @@ async def set_commands(bot: Bot) -> None:
         await bot.set_my_commands(commands())
     with use_lang("ru"):
         await bot.set_my_commands(commands(), language_code="ru")
-
-
-async def set_menu_button(bot: Bot) -> None:
-    try:
-        await bot.set_chat_menu_button(
-            menu_button=MenuButtonWebApp(text="QR Studio", web_app=WebAppInfo(url=webapp_entry_url()))
-        )
-        logger.info("menu button set")
-    except TelegramBadRequest as exc:
-        logger.warning("menu button failed: %s", exc)
 
 
 async def self_ping(url: str, interval: int) -> None:

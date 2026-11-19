@@ -142,6 +142,25 @@ async def test_first_start_shows_language_picker_then_english() -> None:
 
 
 @pytest.mark.asyncio
+async def test_language_set_updates_chat_menu_button() -> None:
+    class MenuBot:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        async def set_chat_menu_button(self, **kwargs) -> None:
+            self.calls.append(kwargs)
+
+    state = FakeState()
+    callback = FakeCallback()
+    callback.data = "lang:set:en"
+    bot = MenuBot()
+    await start.language_set(callback, state, bot)
+    assert bot.calls
+    assert bot.calls[0]["chat_id"] == 42
+    assert bot.calls[0]["menu_button"].web_app.url.endswith("/app?lang=en")
+
+
+@pytest.mark.asyncio
 async def test_saved_language_wins_over_telegram() -> None:
     state = FakeState()
     await state.set_data({"lang": "en"})

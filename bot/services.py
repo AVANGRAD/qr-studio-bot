@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import html
 import io
+import logging
 import os
 import time
 from collections import defaultdict, deque
@@ -10,6 +11,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from urllib.parse import urlencode, urlparse
 
+from aiogram import Bot
+from aiogram.types import MenuButtonWebApp, WebAppInfo
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from qrstudio.logo import prepare_logo
@@ -19,6 +22,7 @@ from qrstudio.render import RenderOptions, RenderResult, render, render_svg
 from .i18n import current_lang, display_name, mode_name, t, warning_text
 
 MAX_CONTENT = 1200
+logger = logging.getLogger(__name__)
 
 
 class ContentError(ValueError):
@@ -147,6 +151,19 @@ def webapp_entry_url(lang: str | None = None) -> str:
     if lang:
         return f"{base}?{urlencode({'lang': lang})}"
     return base
+
+
+async def set_menu_button(bot: Bot, lang: str | None = None, chat_id: int | None = None) -> None:
+    try:
+        await bot.set_chat_menu_button(
+            chat_id=chat_id,
+            menu_button=MenuButtonWebApp(
+                text="QR Studio",
+                web_app=WebAppInfo(url=webapp_entry_url(lang)),
+            ),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("menu button update failed for chat %s: %s", chat_id, exc)
 
 
 def webapp_url(draft: Draft, lang: str | None = None) -> str:

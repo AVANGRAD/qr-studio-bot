@@ -38,7 +38,9 @@
 - Fallback `resolve_lang()`: без кода — `ru`; `en*` — `en`; `ru/uk/be/kk` — `ru`; неизвестный непустой — `en`. Это компромисс между русскоязычной аудиторией и международным default.
 - Язык хранится в FSM как `lang`, чтобы выбор пользователя переживал смену сценария; `clear_flow()` сохраняет его. Ограничение `MemoryStorage` принято осознанно: после рестарта picker появится снова.
 - `LanguageMiddleware` стоит на `dp.update.outer_middleware` после FSM: это единственный способ применить язык ко всем дочерним routers, включая synthetic update из Mini App.
-- Mini App выбирает язык URL → Telegram → browser, чтобы `/app` мог передать выбор бота, а постоянная menu button использовала Telegram.
+- Mini App выбирает язык URL → `localStorage` → Telegram → browser: URL (per-chat menu/`/app`) важнее локального выбора, а сохранённый выбор переживает перезапуск WebView.
 - Telegram-команды: default English + `ru` scope; picker не меняет scope уже открытого чата, это отмечено как ограничение.
+- В Mini App добавлен внутренний RU/EN toggle: он меняет UI сразу, а Apply отправляет `lang` в бота. Это позволяет менять язык без перезапуска и не спамить чат отдельным сообщением при каждом переключении.
+- Per-chat `MenuButtonWebApp` с `?lang=` обновляется после `/start`, `/language` и Apply; global menu button остаётся fallback, если Telegram API недоступен.
 - `Draft.logo_emblem` добавлен, чтобы английская подпись не зависела от русской `logo_label`; старые draft остаются совместимыми.
 - `RenderResult.warning_codes` добавлен, чтобы рендер не зависел от языка, а caption локализовал предупреждения.

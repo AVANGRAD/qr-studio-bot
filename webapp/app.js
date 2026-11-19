@@ -60,19 +60,27 @@
     }
   };
 
+  function storedLang() {
+    try {
+      return window.localStorage.getItem("qrstudio.lang") || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
   function resolveLang() {
     const telegramLang = tg && tg.initDataUnsafe && tg.initDataUnsafe.user
       ? tg.initDataUnsafe.user.language_code
       : "";
-    const raw = String(params.get("lang") || telegramLang || navigator.language || "").toLowerCase().replace(/_/g, "-");
+    const raw = String(params.get("lang") || storedLang() || telegramLang || navigator.language || "").toLowerCase().replace(/_/g, "-");
     if (!raw) return "ru";
     if (raw.startsWith("ru") || raw.startsWith("uk") || raw.startsWith("be") || raw.startsWith("kk")) return "ru";
     if (raw.startsWith("en")) return "en";
     return "en";
   }
 
-  const lang = resolveLang();
-  const s = strings[lang];
+  let lang = resolveLang();
+  let s = strings[lang];
   document.documentElement.lang = lang;
 
   const state = {
@@ -94,9 +102,11 @@
     subcats: document.getElementById("subcats"),
     grid: document.getElementById("grid"),
     apply: document.getElementById("apply"),
-    close: document.getElementById("close")
+    close: document.getElementById("close"),
+    lang: document.getElementById("lang")
   };
   let catalog = null;
+  let catalogRequest = 0;
   let activeTab = "shapes";
   let activeCategory = "all";
   let previewTimer = 0;
@@ -293,13 +303,72 @@
     catalog.presets.forEach((item) => { nameMaps.presets[item.key] = item.name; });
   }
 
+  function applyStrings() {
+    el.apply.textContent = s.apply;
+    el.preview.alt = s.previewAlt;
+    el.close.setAttribute("aria-label", s.close);
+    el.tabs.setAttribute("aria-label", s.sections);
+    if (el.previewTitle) el.previewTitle.textContent = s.previewTitle;
+    if (el.lang) {
+      el.lang.textContent = lang === "ru" ? "EN" : "RU";
+      el.lang.setAttribute("aria-label", lang === "ru" ? "Switch to English" : "Переключить на русский");
+      el.lang.title = lang === "ru" ? "Switch to English" : "Переключить на русский";
+    }
+  }
+
+  async function loadCatalog() {
+    const request = ++catalogRequest;
+    el.status.textContent = s.loading;
+    try {
+      const response = await fetch("/app/catalog.json?lang=" + encodeURIComponent(lang), { cache: "no-store" });
+      if (!response.ok) throw new Error("catalog");
+      const nextCatalog = await response.json();
+      if (request !== catalogRequest) return;
+      catalog = nextCatalog;
+      normalizeState();
+      fillNames();
+      buildTabs();
+      buildSubcats();
+      updateSummary();
+      renderGrid();
+      updatePreview();
+      el.status.textContent = s.select;
+    } catch (error) {
+      if (request === catalogRequest) el.status.textContent = s.catalogFailed;
+    }
+  }
+
+  function setLanguage(next) {
+    if (!strings[next] || next === lang) return;
+    lang = next;
+    s = strings[lang];
+    document.documentElement.lang = lang;
+    try {
+      window.localStorage.setItem("qrstudio.lang", lang);
+    } catch (error) {}
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("lang", lang);
+      window.history.replaceState(null, "", url);
+    } catch (error) {}
+    applyStrings();
+    if (catalog) {
+      buildTabs();
+      buildSubcats();
+      updateSummary();
+      renderGrid();
+    }
+    loadCatalog();
+  }
+
   async function applySelection() {
     const payload = {
       shape: state.shape,
       module_style: state.module_style,
       eye_style: state.eye_style,
       palette: state.palette,
-      size: state.size
+      size: state.size,
+      lang: lang
     };
     if (tg && tg.initData) {
       el.status.textContent = s.applying;
@@ -331,12 +400,7 @@
   }
 
   async function init() {
-    el.status.textContent = s.loading;
-    el.apply.textContent = s.apply;
-    el.preview.alt = s.previewAlt;
-    el.close.setAttribute("aria-label", s.close);
-    el.tabs.setAttribute("aria-label", s.sections);
-    if (el.previewTitle) el.previewTitle.textContent = s.previewTitle;
+    applyStrings();
     if (tg) {
       tg.ready();
       tg.expand();
@@ -344,22 +408,8 @@
       if (typeof tg.onEvent === "function") tg.onEvent("themeChanged", applyTheme);
       if (typeof tg.setHeaderColor === "function") tg.setHeaderColor("secondary_bg_color");
     }
-    try {
-      const response = await fetch("/app/catalog.json?lang=" + encodeURIComponent(lang), { cache: "no-store" });
-      if (!response.ok) throw new Error("catalog");
-      catalog = await response.json();
-      normalizeState();
-      fillNames();
-      buildTabs();
-      buildSubcats();
-      updateSummary();
-      renderGrid();
-      updatePreview();
-      el.status.textContent = s.select;
-    } catch (error) {
-      el.status.textContent = s.catalogFailed;
-    }
     el.apply.addEventListener("click", applySelection);
+    if (el.lang) el.lang.addEventListener("click", () => setLanguage(lang === "ru" ? "en" : "ru"));
     el.close.addEventListener("click", () => {
       if (tg && typeof tg.close === "function") tg.close();
       else window.close();
@@ -367,6 +417,7 @@
     el.preview.addEventListener("load", () => {
       el.status.textContent = s.applyHint;
     });
+    await loadCatalog();
   }
 
   init();

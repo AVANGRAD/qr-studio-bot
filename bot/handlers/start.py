@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -8,15 +8,19 @@ from aiogram.types import CallbackQuery, Message
 
 from ..i18n import SUPPORTED_LANGS, language_label, t, use_lang
 from ..keyboards import help_kb, language_kb, welcome_kb
+from ..services import set_menu_button
 from ..states import Flow
 from .common import clear_flow, get_draft, send_preview
 
 router = Router(name="start")
 
 
-async def _send_home(target: Message, state: FSMContext) -> None:
+async def _send_home(target: Message, state: FSMContext, bot: Bot | None = None) -> None:
     data = await state.get_data()
-    if data.get("lang") not in SUPPORTED_LANGS:
+    lang = data.get("lang")
+    if bot is not None:
+        await set_menu_button(bot, lang if lang in SUPPORTED_LANGS else None, target.chat.id)
+    if lang not in SUPPORTED_LANGS:
         await state.clear()
         await target.answer(t("choose_language"), reply_markup=language_kb())
         return
@@ -25,8 +29,8 @@ async def _send_home(target: Message, state: FSMContext) -> None:
 
 
 @router.message(CommandStart())
-async def start(message: Message, state: FSMContext) -> None:
-    await _send_home(message, state)
+async def start(message: Message, state: FSMContext, bot: Bot | None = None) -> None:
+    await _send_home(message, state, bot)
 
 
 @router.message(Command("help"))
@@ -41,9 +45,9 @@ async def language_command(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "menu:home")
-async def menu_home(callback: CallbackQuery, state: FSMContext) -> None:
+async def menu_home(callback: CallbackQuery, state: FSMContext, bot: Bot | None = None) -> None:
     await callback.answer()
-    await _send_home(callback.message, state)
+    await _send_home(callback.message, state, bot)
 
 
 @router.callback_query(F.data == "menu:help")
@@ -67,7 +71,7 @@ async def language_menu(callback: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data.startswith("lang:set:"))
-async def language_set(callback: CallbackQuery, state: FSMContext) -> None:
+async def language_set(callback: CallbackQuery, state: FSMContext, bot: Bot | None = None) -> None:
     lang = (callback.data or "").split(":")[-1]
     if lang not in SUPPORTED_LANGS:
         await callback.answer(t("unknown_language"), show_alert=True)
@@ -75,6 +79,8 @@ async def language_set(callback: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
     data["lang"] = lang
     await state.set_data(data)
+    if bot is not None and callback.message is not None:
+        await set_menu_button(bot, lang, callback.message.chat.id)
     await callback.answer(language_label(lang))
     draft = get_draft(data)
     with use_lang(lang):
