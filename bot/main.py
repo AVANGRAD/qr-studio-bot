@@ -19,12 +19,14 @@ from .handlers import admin, create, logo, menu, photo, settings, start, webapp
 from .i18n import LanguageMiddleware, t, use_lang
 from .miniapp import setup as setup_miniapp
 from .services import set_menu_button
+from .support import SupportBot, build_support
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("aiogram.event").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 STARTED_AT = time.time()
+SUPPORT_ENABLED = False
 
 
 async def health(_: web.Request) -> web.Response:
@@ -35,6 +37,7 @@ async def health(_: web.Request) -> web.Response:
             "version": "1.0.0",
             "uptime": int(time.time() - STARTED_AT),
             "mode": "webhook",
+            "support": SUPPORT_ENABLED,
         }
     )
 
@@ -66,6 +69,7 @@ async def set_commands(bot: Bot) -> None:
             BotCommand(command="app", description=t("cmd_app")),
             BotCommand(command="qr", description=t("cmd_qr")),
             BotCommand(command="help", description=t("cmd_help")),
+            BotCommand(command="support", description=t("cmd_support")),
         ]
 
     with use_lang("en"):
@@ -86,7 +90,12 @@ async def self_ping(url: str, interval: int) -> None:
             await asyncio.sleep(interval)
 
 
-async def run_webhook(bot: Bot, dp: Dispatcher, settings: Settings) -> None:
+async def run_webhook(
+    bot: Bot,
+    dp: Dispatcher,
+    settings: Settings,
+    support: SupportBot | None = None,
+) -> None:
     if not settings.webhook_base_url:
         raise RuntimeError("Set WEBHOOK_BASE_URL or RENDER_EXTERNAL_URL for webhook mode")
     if not settings.webhook_secret:
@@ -99,6 +108,8 @@ async def run_webhook(bot: Bot, dp: Dispatcher, settings: Settings) -> None:
     setup_miniapp(app, bot=bot, dispatcher=dp)
     SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=settings.webhook_secret).register(app, path=path)
     setup_application(app, dp, bot=bot)
+    if support is not None:
+        support.register(app)
 
     async def on_startup(_: web.Application) -> None:
         await set_commands(bot)
@@ -110,6 +121,12 @@ async def run_webhook(bot: Bot, dp: Dispatcher, settings: Settings) -> None:
             drop_pending_updates=True,
         )
         logger.info("webhook set: %s", webhook_url)
+        if support is not None:
+            try:
+                await support.set_commands()
+                await support.set_webhook(settings.webhook_base_url)
+            except Exception:
+                logger.exception("support bot startup failed")
         if settings.self_ping_interval > 0:
             _ = asyncio.create_task(self_ping(settings.webhook_base_url + "/healthz", settings.self_ping_interval))
 
@@ -133,14 +150,24 @@ async def run_polling(bot: Bot, dp: Dispatcher) -> None:
 
 
 async def main() -> None:
+    global SUPPORT_ENABLED
     bot, dp, cfg, analytics = build()
+    support = build_support(cfg)
+    SUPPORT_ENABLED = support is not None
     await analytics.connect()
+    if support is not None:
+        await support.connect()
     try:
         if cfg.mode == "polling":
-            await run_polling(bot, dp)
+            tasks = [asyncio.create_task(run_polling(bot, dp))]
+            if support is not None:
+                tasks.append(asyncio.create_task(support.run_polling()))
+            await asyncio.gather(*tasks)
         else:
-            await run_webhook(bot, dp, cfg)
+            await run_webhook(bot, dp, cfg, support)
     finally:
+        if support is not None:
+            await support.close()
         await analytics.close()
         await bot.session.close()
 

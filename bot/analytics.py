@@ -103,6 +103,19 @@ ORDER BY 2 DESC, 1
 LIMIT 10
 """
 
+TOTAL_EVENTS = """
+SELECT count(*)::int AS total
+FROM analytics.events
+"""
+
+EVENT_STATS_ALL = """
+SELECT event_type, count(*)::int AS count
+FROM analytics.events
+GROUP BY 1
+ORDER BY 2 DESC, 1
+LIMIT 10
+"""
+
 
 class AnalyticsMiddleware(BaseMiddleware):
     def __init__(self, analytics: Analytics, admin_id: int | None = None) -> None:
@@ -138,6 +151,8 @@ class StatsSnapshot:
     blocked: int
     languages: tuple[tuple[str, int], ...]
     events: tuple[tuple[str, int], ...]
+    total_events: int = 0
+    events_all: tuple[tuple[str, int], ...] = ()
 
 
 def event_from_update(update: Update) -> str:
@@ -284,6 +299,8 @@ class Analytics:
             activity = await connection.fetchrow(ACTIVITY_STATS)
             languages = await connection.fetch(LANGUAGE_STATS)
             events = await connection.fetch(EVENT_STATS)
+            total_events = await connection.fetchval(TOTAL_EVENTS)
+            events_all = await connection.fetch(EVENT_STATS_ALL)
         if users is None or activity is None:
             return None
         return StatsSnapshot(
@@ -299,4 +316,6 @@ class Analytics:
             blocked=int(users["blocked"]),
             languages=tuple((str(row["language"]), int(row["count"])) for row in languages),
             events=tuple((str(row["event_type"]), int(row["count"])) for row in events),
+            total_events=int(total_events or 0),
+            events_all=tuple((str(row["event_type"]), int(row["count"])) for row in events_all),
         )

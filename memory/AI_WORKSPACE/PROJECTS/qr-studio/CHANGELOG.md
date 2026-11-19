@@ -1,3 +1,15 @@
+# Changelog
+
+## 2026-11-19 — поддержка и статистика за всё время
+
+- `/stats` получил `total_events` и `events_all`: топ событий за всё время, в дополнение к 7-дневному срезу.
+- Добавлен `bot/support.py`: отдельный `SupportBot` на `SUPPORT_BOT_TOKEN`, свой webhook `/support/webhook/<secret>` на том же aiohttp-сервере.
+- Пользовательские сообщения пересылаются `ADMIN_ID`, ответы администратора через reply копируются пользователю; mapping хранится в `support.tickets` с fallback в память.
+- В основном боте добавлена команда `/support` со ссылкой на `@QUaRc0DeSupport_bot` и пункт в меню команд.
+- `SUPPORT_BOT_TOKEN` добавлен в `.env`, `.env.example`, `render.yaml` и Render Environment; `SUPPORT_WEBHOOK_SECRET` выводится из токена.
+- Проверки: pytest 74/74, ruff OK; support webhook route 401 без секрета и 200 с секретом; `support.tickets` создана, тестовая строка удалена.
+- Live-деплой и проверка тикета ещё не выполнены.
+
 ## 2026-11-19 — аналитика пользователей
 
 - Добавлен `bot/analytics.py`: пул `asyncpg`, создание схемы `analytics`, upsert пользователей и запись событий.
@@ -9,8 +21,6 @@
 - Проверки: pytest 70/70, ruff OK.
 - `ADMIN_ID` найден через `getChat` и задан локально/в Render; commit `afe6edf`, Render deploy `dep-dbvf7jjm8hqs73b2r28g` live.
 - Live: `analytics database connected`; synthetic `/stats` от ADMIN_ID прошёл 200 и записал пользователя/событие; ошибок нет.
-
-# Changelog
 
 ## 2026-11-18
 

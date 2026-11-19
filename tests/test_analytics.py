@@ -44,6 +44,8 @@ def _snapshot() -> StatsSnapshot:
         blocked=1,
         languages=(("ru", 7), ("en", 3)),
         events=(("png_download", 6), ("start", 4)),
+        total_events=42,
+        events_all=(("message", 20), ("png_download", 8)),
     )
 
 
@@ -64,12 +66,18 @@ def test_format_stats_ru_and_en() -> None:
     with use_lang("ru"):
         text = format_stats(_snapshot())
     assert "Всего пользователей: 10" in text
+    assert "Всего событий за всё время: 42" in text
+    assert "События за всё время:" in text
+    assert "сообщение: 20" in text
     assert "скачивание PNG: 6" in text
     assert "ru: 7 · en: 3" in text
 
     with use_lang("en"):
         text = format_stats(_snapshot())
     assert "Total users: 10" in text
+    assert "Total events all time: 42" in text
+    assert "Events all time:" in text
+    assert "message: 20" in text
     assert "PNG download: 6" in text
     assert "ru: 7 · en: 3" in text
 

@@ -54,6 +54,7 @@ def format_stats(snapshot: StatsSnapshot) -> str:
         t("stats_title"),
         "",
         t("stats_total", total=snapshot.total),
+        t("stats_all_time_events", total=snapshot.total_events),
         t("stats_new", today=snapshot.new_today, week=snapshot.new_week, month=snapshot.new_month),
         t(
             "stats_active",
@@ -70,6 +71,11 @@ def format_stats(snapshot: StatsSnapshot) -> str:
         lines.extend(["", t("stats_events")])
         lines.extend(
             t("stats_event_line", name=event_label(name), count=count) for name, count in snapshot.events
+        )
+    if snapshot.events_all:
+        lines.extend(["", t("stats_events_all")])
+        lines.extend(
+            t("stats_event_line", name=event_label(name), count=count) for name, count in snapshot.events_all
         )
     return "\n".join(lines)
 

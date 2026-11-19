@@ -15,3 +15,4 @@
 - [Итог: локализация RU/EN](summaries/2026-11-19-i18n.md)
 - [Итог: язык в Mini App](summaries/2026-11-19-miniapp-language.md)
 - [Итог: аналитика](summaries/2026-11-19-analytics.md)
+- [Итог: поддержка и all-time статистика](summaries/2026-11-19-support-and-alltime.md)

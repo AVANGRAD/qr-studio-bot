@@ -4,7 +4,12 @@ from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 
 from ..i18n import SUPPORTED_LANGS, language_label, t, use_lang
 from ..keyboards import help_kb, language_kb, welcome_kb
@@ -36,6 +41,23 @@ async def start(message: Message, state: FSMContext, bot: Bot | None = None) -> 
 @router.message(Command("help"))
 async def help_command(message: Message) -> None:
     await message.answer(t("help"), reply_markup=help_kb())
+
+
+@router.message(Command("support"))
+async def support_command(message: Message) -> None:
+    await message.answer(
+        t("support_open"),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=t("support_open_button"),
+                        url="https://t.me/QUaRc0DeSupport_bot",
+                    )
+                ]
+            ]
+        ),
+    )
 
 
 @router.message(Command("language"))

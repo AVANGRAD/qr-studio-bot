@@ -39,9 +39,15 @@
 - [x] Проверено подключение к Supabase PostgreSQL 17.12; тестовые записи созданы и удалены.
 - [x] `DATABASE_URL` добавлен в `.env`, Render Environment, `.env.example`, `render.yaml`; `asyncpg` — в requirements.
 - [x] Проверки: pytest 70/70, ruff OK.
+- [x] `/stats`: добавлены всего событий и топ событий за всё время.
+- [x] Support-бот: отдельный токен, `/support` в основном боте, пересылка тикетов админу, reply обратно пользователю, `support.tickets`.
+- [x] Support-тесты и UI-команда `/support`; pytest 74/74, ruff OK.
+- [x] `SUPPORT_BOT_TOKEN` добавлен в `.env`, `.env.example`, `render.yaml`, Render Environment; таблица `support.tickets` проверена.
 - [x] Получить Telegram ID администратора и задать `ADMIN_ID` локально и в Render.
 - [x] Закоммитить и задеплоить аналитику (`afe6edf`, deploy `dep-dbvf7jjm8hqs73b2r28g`).
 - [x] Live-проверка `/stats` через synthetic webhook: 200, запись в `analytics.users`/`analytics.events`, ошибок нет.
+- [ ] Задеплоить support/all-time и проверить live `/stats`, `/support`, webhook support-бота.
+- [ ] Попросить администратора нажать `/start` в `@QUaRc0DeSupport_bot`; без этого тикеты не доставляются.
 - [ ] При необходимости добавить рассылку с обработкой 403 для `blocked_at`.
 - [ ] Живая проверка picker/`/language`/EN/Mini App.
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.

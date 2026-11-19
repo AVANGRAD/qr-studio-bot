@@ -13,6 +13,8 @@ class Settings:
     port: int = 10000
     webhook_base_url: str | None = None
     webhook_secret: str | None = None
+    support_bot_token: str | None = None
+    support_webhook_secret: str | None = None
     self_ping_interval: int = 600
     admin_id: int | None = None
     database_url: str | None = None
@@ -41,6 +43,12 @@ class Settings:
             secret = hashlib.sha256(secret.encode("utf-8")).hexdigest()[:40]
         if secret is None and mode == "webhook":
             secret = hashlib.sha256(token.encode("utf-8")).hexdigest()[:40]
+        support_token = (os.getenv("SUPPORT_BOT_TOKEN") or "").strip() or None
+        support_secret = (os.getenv("SUPPORT_WEBHOOK_SECRET") or "").strip() or None
+        if support_secret is not None and not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", support_secret):
+            support_secret = hashlib.sha256(support_secret.encode("utf-8")).hexdigest()[:40]
+        if support_secret is None and support_token:
+            support_secret = hashlib.sha256(("support:" + support_token).encode("utf-8")).hexdigest()[:40]
         admin = os.getenv("ADMIN_ID", "").strip()
         database_url = (os.getenv("DATABASE_URL") or "").strip() or None
         return cls(
@@ -49,6 +57,8 @@ class Settings:
             port=int(os.getenv("PORT", "10000")),
             webhook_base_url=base,
             webhook_secret=secret,
+            support_bot_token=support_token,
+            support_webhook_secret=support_secret,
             self_ping_interval=max(0, int(os.getenv("SELF_PING_INTERVAL_SECONDS", "600"))),
             admin_id=int(admin) if admin.isdigit() else None,
             database_url=database_url,

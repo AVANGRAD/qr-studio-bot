@@ -22,3 +22,5 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
+      - key: SUPPORT_BOT_TOKEN
+        sync: false
