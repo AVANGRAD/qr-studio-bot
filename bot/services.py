@@ -12,12 +12,11 @@ from urllib.parse import urlencode, urlparse
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from qrstudio.eyes import eye_name
 from qrstudio.logo import prepare_logo
-from qrstudio.masks import shape_name
-from qrstudio.presets import get_palette, get_preset
+from qrstudio.presets import get_preset
 from qrstudio.render import RenderOptions, RenderResult, render, render_svg
-from qrstudio.shapes import style_name
+
+from .i18n import current_lang, display_name, mode_name, t, warning_text
 
 MAX_CONTENT = 1200
 
@@ -39,6 +38,7 @@ class Draft:
     logo_text: str = "QR"
     logo_mono: bool = False
     logo_label: str = ""
+    logo_emblem: str = ""
     silhouette: bool = True
     photo_bytes: bytes | None = None
 
@@ -83,17 +83,17 @@ class Draft:
 def normalize_content(value: str, max_length: int = MAX_CONTENT) -> str:
     text = (value or "").strip()
     if not text:
-        raise ContentError("Пустой текст. Пришли ссылку или текст для QR.")
+        raise ContentError(t("empty_content"))
     if len(text) > max_length:
-        raise ContentError(f"Слишком длинный текст: {len(text)} символов. Максимум — {max_length}.")
+        raise ContentError(t("too_long_content", length=len(text), max_length=max_length))
     if text.startswith("www."):
         text = "https://" + text
     if "://" in text and not text.lower().startswith(("http://", "https://", "tg://")):
-        raise ContentError("Поддерживаются ссылки http://, https:// и tg://, либо обычный текст.")
+        raise ContentError(t("bad_scheme"))
     if text.lower().startswith(("http://", "https://")):
         parsed = urlparse(text)
         if not parsed.netloc or " " in parsed.netloc:
-            raise ContentError("Не похоже на корректную ссылку.")
+            raise ContentError(t("bad_url"))
     return text
 
 
@@ -142,11 +142,14 @@ def webapp_base_url() -> str:
     return base
 
 
-def webapp_entry_url() -> str:
-    return f"{webapp_base_url()}/app"
+def webapp_entry_url(lang: str | None = None) -> str:
+    base = f"{webapp_base_url()}/app"
+    if lang:
+        return f"{base}?{urlencode({'lang': lang})}"
+    return base
 
 
-def webapp_url(draft: Draft) -> str:
+def webapp_url(draft: Draft, lang: str | None = None) -> str:
     base = webapp_base_url()
     query = urlencode(
         {
@@ -155,27 +158,21 @@ def webapp_url(draft: Draft) -> str:
             "eye": draft.eye_style,
             "palette": draft.palette,
             "size": draft.size,
+            "lang": lang or current_lang.get(),
         }
     )
     return f"{base}/app?{query}"
 
 
 def caption(draft: Draft, result: RenderResult | None = None) -> str:
-    mode_names = {
-        "plate": "плашка",
-        "knockout": "вырез",
-        "texture": "текстура",
-        "background": "фон",
-        "corner": "угол",
-        "badge": "медальон",
-        "monogram": "монограмма",
-    }
-    logo = "нет"
+    logo = t("logo_none")
     if draft.logo_mode == "monogram":
-        logo = f"монограмма «{html.escape(draft.logo_text)}»"
+        logo = t("logo_monogram", text=html.escape(draft.logo_text))
     elif draft.has_logo:
-        logo = mode_names.get(draft.logo_mode, draft.logo_mode)
-        if draft.logo_label:
+        logo = mode_name(draft.logo_mode)
+        if draft.logo_emblem:
+            logo = f"{html.escape(display_name('emblem', draft.logo_emblem))} · {logo}"
+        elif draft.logo_label:
             logo = f"{html.escape(draft.logo_label)} · {logo}"
     lines = [
         f"<b>QR Studio</b> · {draft.size} px",
@@ -183,21 +180,35 @@ def caption(draft: Draft, result: RenderResult | None = None) -> str:
         "",
     ]
     if draft.has_photo:
-        lines.append("Фон: фото · QR на светлой карточке")
+        lines.append(t("caption_photo"))
     else:
-        lines.append(f"Форма: {shape_name(draft.shape)} · Узор: {style_name(draft.module_style)}")
+        lines.append(
+            t(
+                "caption_form",
+                shape=display_name("shape", draft.shape),
+                style=display_name("module", draft.module_style),
+            )
+        )
     lines.extend(
         [
-            f"Глаза: {eye_name(draft.eye_style)} · Палитра: {get_palette(draft.palette).name}",
-            f"Логотип: {logo}",
+            t(
+                "caption_eyes",
+                eyes=display_name("eye", draft.eye_style),
+                palette=display_name("palette", draft.palette),
+            ),
+            t("caption_logo", logo=logo),
         ]
     )
     if result:
-        lines.append(f"Модуль: {result.module_px:.1f} px · Контраст: {result.contrast:.1f}:1")
-        for warning in result.warnings:
-            lines.append(f"<i>{html.escape(warning)}</i>")
+        lines.append(t("caption_metrics", module=result.module_px, contrast=result.contrast))
+        if result.warning_codes:
+            for code, params in result.warning_codes:
+                lines.append(f"<i>{html.escape(warning_text(code, params))}</i>")
+        else:
+            for warning in result.warnings:
+                lines.append(f"<i>{html.escape(warning)}</i>")
         if result.module_px < 4.5:
-            lines.append("<i>Модуль мелкий: увеличь размер или сократи текст.</i>")
+            lines.append(f"<i>{t('caption_small')}</i>")
     return "\n".join(lines)
 
 
@@ -214,12 +225,12 @@ def preset_draft(content: str, key: str) -> Draft:
 
 def prepare_uploaded_photo(raw: bytes) -> bytes:
     if len(raw) > 12 * 1024 * 1024:
-        raise ContentError("Фото слишком большое. Максимум — 12 МБ.")
+        raise ContentError(t("photo_too_large"))
     try:
         with Image.open(io.BytesIO(raw)) as image:
             image = ImageOps.exif_transpose(image).convert("RGB")
     except (UnidentifiedImageError, OSError) as exc:
-        raise ContentError("Не удалось прочитать фото. Пришли PNG, JPG или WebP.") from exc
+        raise ContentError(t("photo_unreadable")) from exc
     image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
     buffer = io.BytesIO()
     image.save(buffer, format="JPEG", quality=88, optimize=True)
@@ -233,17 +244,17 @@ def prepare_uploaded_photo(raw: bytes) -> bytes:
 
 def prepare_uploaded_logo(raw: bytes) -> bytes:
     if len(raw) > 8 * 1024 * 1024:
-        raise ContentError("Логотип слишком большой. Максимум — 8 МБ.")
+        raise ContentError(t("logo_too_large"))
     try:
         with Image.open(io.BytesIO(raw)) as image:
             image.verify()
     except (UnidentifiedImageError, OSError) as exc:
-        raise ContentError("Не удалось прочитать изображение. Пришли PNG, JPG или WebP.") from exc
+        raise ContentError(t("logo_unreadable")) from exc
     prepared = prepare_logo(raw, max_side=1024)
     buffer = io.BytesIO()
     prepared.save(buffer, format="PNG")
     if len(buffer.getvalue()) > 4 * 1024 * 1024:
-        raise ContentError("Логотип слишком тяжёлый после обработки. Попробуй картинку поменьше.")
+        raise ContentError(t("logo_too_heavy"))
     return buffer.getvalue()
 
 
@@ -259,9 +270,9 @@ class RateLimiter:
         while events and now - events[0] > 86400:
             events.popleft()
         if sum(1 for value in events if now - value <= 60) >= self.per_minute:
-            return False, "Слишком часто. Подожди минуту."
+            return False, t("rate_minute")
         if len(events) >= self.per_day:
-            return False, "Дневной лимит исчерпан. Попробуй завтра."
+            return False, t("rate_day")
         events.append(now)
         return True, ""
 

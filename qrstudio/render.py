@@ -88,6 +88,7 @@ class RenderResult:
     options: RenderOptions
     palette: Palette
     warnings: list[str] = field(default_factory=list)
+    warning_codes: list[tuple[str, dict[str, object]]] = field(default_factory=list)
     fallback: bool = False
     module_px: float = 0.0
     contrast: float = 0.0
@@ -355,7 +356,13 @@ def _photo_canvas(photo: Image.Image, size: int) -> Image.Image:
 def render(options: RenderOptions) -> RenderResult:
     opts = options.normalized()
     warnings: list[str] = []
+    warning_codes: list[tuple[str, dict[str, object]]] = []
     fallback = False
+
+    def warn(text: str, code: str, **params: object) -> None:
+        warnings.append(text)
+        warning_codes.append((code, params))
+
     pal = get_palette(opts.palette)
     fg_spec: ColorSpec = opts.fg if opts.fg is not None else pal.fg
     bg_spec: ColorSpec = opts.bg if opts.bg is not None else pal.bg
@@ -428,7 +435,13 @@ def render(options: RenderOptions) -> RenderResult:
     if silhouette:
         safe, finder_cov, data_cov = silhouette_safe(opts.shape, qr, W, cell, qr_x0, qr_y0)
         if not safe:
-            warnings.append(f"Силуэт «{shape_name(opts.shape)}» режет finder-узоры ({finder_cov:.0%}) или данные ({data_cov:.0%}) — использую безопасную рамку.")
+            warn(
+                f"Силуэт «{shape_name(opts.shape)}» режет finder-узоры ({finder_cov:.0%}) или данные ({data_cov:.0%}) — использую безопасную рамку.",
+                "silhouette_cut",
+                shape=opts.shape,
+                finder=finder_cov,
+                data=data_cov,
+            )
             silhouette = False
             frame = True
             fallback = True
@@ -443,17 +456,17 @@ def render(options: RenderOptions) -> RenderResult:
             plate_box = (cx - plate_px / 2, cy - plate_px / 2, cx + plate_px / 2, cy + plate_px / 2)
 
     if opts.module_style not in MODULE_STYLES:
-        warnings.append(f"Неизвестный стиль модулей «{opts.module_style}», использую rounded.")
+        warn(f"Неизвестный стиль модулей «{opts.module_style}», использую rounded.", "unknown_module", style=opts.module_style)
         opts = replace(opts, module_style="rounded")
     if opts.eye_style not in eye_keys():
-        warnings.append(f"Неизвестный стиль глаз «{opts.eye_style}», использую rounded.")
+        warn(f"Неизвестный стиль глаз «{opts.eye_style}», использую rounded.", "unknown_eye", style=opts.eye_style)
         opts = replace(opts, eye_style="rounded")
     if cell < 7 and opts.module_style in {"heart", "paw", "star", "confetti", "flower"}:
-        warnings.append("Модуль слишком мелкий для выбранного узора — упрощаю до точек.")
+        warn("Модуль слишком мелкий для выбранного узора — упрощаю до точек.", "small_module")
         opts = replace(opts, module_style="dot")
         fallback = True
     if cell < 9 and opts.eye_style in {"cat_eye", "star", "flower", "leaf"}:
-        warnings.append("Глаза слишком мелкие для выбранного узора — упрощаю до скруглённых.")
+        warn("Глаза слишком мелкие для выбранного узора — упрощаю до скруглённых.", "small_eye")
         opts = replace(opts, eye_style="rounded")
         fallback = True
 
@@ -639,7 +652,7 @@ def render(options: RenderOptions) -> RenderResult:
         plate_ratio = 1.2 if opts.logo_mode == "corner" else (1.4 if opts.logo_mode == "badge" else 1.32)
         coverage = (opts.logo_size * plate_ratio) ** 2
         if coverage > 0.085:
-            warnings.append("Логотип крупный — проверь сканирование камерой.")
+            warn("Логотип крупный — проверь сканирование камерой.", "logo_large")
     final_qr_fg = qr_fg_spec
     final_qr_bg = qr_bg_spec
     return RenderResult(
@@ -648,6 +661,7 @@ def render(options: RenderOptions) -> RenderResult:
         options=opts,
         palette=pal,
         warnings=warnings,
+        warning_codes=warning_codes,
         fallback=fallback,
         module_px=cell / ss,
         contrast=contrast,

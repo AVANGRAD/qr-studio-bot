@@ -3,6 +3,78 @@
 
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   const params = new URLSearchParams(window.location.search);
+  const strings = {
+    ru: {
+      loading: "Загружаю варианты…",
+      updating: "Обновляю предпросмотр…",
+      select: "Выбери вариант — превью обновится сразу.",
+      applyHint: "Выбери вариант и нажми «Применить в боте».",
+      applying: "Применяю настройки…",
+      done: "Готово. Возвращаюсь в бота…",
+      applyFailed: "Не удалось применить настройки. Попробуй ещё раз.",
+      sendFailed: "Не удалось отправить настройки. Попробуй ещё раз.",
+      openTelegram: "Открой редактор через Telegram, чтобы применить настройки.",
+      catalogFailed: "Не удалось загрузить каталог. Обнови страницу.",
+      empty: "Ничего не найдено",
+      all: "Все",
+      close: "Закрыть",
+      sections: "Разделы",
+      previewAlt: "Предпросмотр QR",
+      previewTitle: "Так будет выглядеть QR",
+      apply: "Применить в боте",
+      tabs: {
+        shapes: "Формы",
+        modules: "Узоры",
+        eyes: "Глаза",
+        palettes: "Палитры",
+        presets: "Пресеты",
+        sizes: "Размер"
+      }
+    },
+    en: {
+      loading: "Loading options…",
+      updating: "Updating preview…",
+      select: "Choose an option — the preview updates instantly.",
+      applyHint: "Choose an option and tap “Apply in bot”.",
+      applying: "Applying settings…",
+      done: "Done. Returning to the bot…",
+      applyFailed: "Couldn't apply the settings. Try again.",
+      sendFailed: "Couldn't send the settings. Try again.",
+      openTelegram: "Open the editor through Telegram to apply the settings.",
+      catalogFailed: "Couldn't load the catalog. Refresh the page.",
+      empty: "Nothing found",
+      all: "All",
+      close: "Close",
+      sections: "Sections",
+      previewAlt: "QR preview",
+      previewTitle: "This is how the QR will look",
+      apply: "Apply in bot",
+      tabs: {
+        shapes: "Shapes",
+        modules: "Patterns",
+        eyes: "Eyes",
+        palettes: "Palettes",
+        presets: "Presets",
+        sizes: "Size"
+      }
+    }
+  };
+
+  function resolveLang() {
+    const telegramLang = tg && tg.initDataUnsafe && tg.initDataUnsafe.user
+      ? tg.initDataUnsafe.user.language_code
+      : "";
+    const raw = String(params.get("lang") || telegramLang || navigator.language || "").toLowerCase().replace(/_/g, "-");
+    if (!raw) return "ru";
+    if (raw.startsWith("ru") || raw.startsWith("uk") || raw.startsWith("be") || raw.startsWith("kk")) return "ru";
+    if (raw.startsWith("en")) return "en";
+    return "en";
+  }
+
+  const lang = resolveLang();
+  const s = strings[lang];
+  document.documentElement.lang = lang;
+
   const state = {
     shape: params.get("shape") || "square",
     module_style: params.get("module") || params.get("module_style") || "dot",
@@ -12,17 +84,11 @@
     preset: null
   };
   const fields = { shapes: "shape", modules: "module_style", eyes: "eye_style", palettes: "palette" };
-  const tabDefs = [
-    ["shapes", "Формы"],
-    ["modules", "Узоры"],
-    ["eyes", "Глаза"],
-    ["palettes", "Палитры"],
-    ["presets", "Пресеты"],
-    ["sizes", "Размер"]
-  ];
+  const tabKeys = ["shapes", "modules", "eyes", "palettes", "presets", "sizes"];
   const el = {
     status: document.getElementById("status"),
     preview: document.getElementById("preview"),
+    previewTitle: document.getElementById("preview-title"),
     summary: document.getElementById("summary"),
     tabs: document.getElementById("tabs"),
     subcats: document.getElementById("subcats"),
@@ -82,11 +148,11 @@
 
   function buildTabs() {
     el.tabs.replaceChildren();
-    tabDefs.forEach(([key, label]) => {
+    tabKeys.forEach((key) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "tab" + (key === activeTab ? " active" : "");
-      button.textContent = label;
+      button.textContent = s.tabs[key];
       button.addEventListener("click", () => {
         activeTab = key;
         buildTabs();
@@ -101,7 +167,7 @@
     el.subcats.replaceChildren();
     el.subcats.hidden = activeTab !== "shapes";
     if (activeTab !== "shapes") return;
-    const groups = [{ key: "all", name: "Все" }].concat(catalog.shapes.map(({ key, name }) => ({ key, name })));
+    const groups = [{ key: "all", name: s.all }].concat(catalog.shapes.map(({ key, name }) => ({ key, name })));
     groups.forEach((group) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -178,7 +244,7 @@
     if (!items.length) {
       const empty = document.createElement("p");
       empty.className = "empty";
-      empty.textContent = "Ничего не найдено";
+      empty.textContent = s.empty;
       el.grid.appendChild(empty);
     }
   }
@@ -193,7 +259,7 @@
 
   function updatePreview() {
     window.clearTimeout(previewTimer);
-    el.status.textContent = "Обновляю предпросмотр…";
+    el.status.textContent = s.updating;
     previewTimer = window.setTimeout(() => {
       const query = new URLSearchParams({
         shape: state.shape,
@@ -236,7 +302,7 @@
       size: state.size
     };
     if (tg && tg.initData) {
-      el.status.textContent = "Применяю настройки…";
+      el.status.textContent = s.applying;
       try {
         const response = await fetch("/app/apply", {
           method: "POST",
@@ -244,27 +310,33 @@
           body: JSON.stringify({ init_data: tg.initData, data: payload })
         });
         if (!response.ok) throw new Error("apply");
-        el.status.textContent = "Готово. Возвращаюсь в бота…";
+        el.status.textContent = s.done;
         window.setTimeout(() => tg.close(), 180);
       } catch (error) {
-        el.status.textContent = "Не удалось применить настройки. Попробуй ещё раз.";
+        el.status.textContent = s.applyFailed;
       }
       return;
     }
     if (!tg || typeof tg.sendData !== "function") {
-      el.status.textContent = "Открой редактор через Telegram, чтобы применить настройки.";
+      el.status.textContent = s.openTelegram;
       return;
     }
     try {
       tg.sendData(JSON.stringify(payload));
-      el.status.textContent = "Готово. Возвращаюсь в бота…";
+      el.status.textContent = s.done;
       window.setTimeout(() => tg.close(), 180);
     } catch (error) {
-      el.status.textContent = "Не удалось отправить настройки. Попробуй ещё раз.";
+      el.status.textContent = s.sendFailed;
     }
   }
 
   async function init() {
+    el.status.textContent = s.loading;
+    el.apply.textContent = s.apply;
+    el.preview.alt = s.previewAlt;
+    el.close.setAttribute("aria-label", s.close);
+    el.tabs.setAttribute("aria-label", s.sections);
+    if (el.previewTitle) el.previewTitle.textContent = s.previewTitle;
     if (tg) {
       tg.ready();
       tg.expand();
@@ -273,7 +345,7 @@
       if (typeof tg.setHeaderColor === "function") tg.setHeaderColor("secondary_bg_color");
     }
     try {
-      const response = await fetch("/app/catalog.json", { cache: "no-store" });
+      const response = await fetch("/app/catalog.json?lang=" + encodeURIComponent(lang), { cache: "no-store" });
       if (!response.ok) throw new Error("catalog");
       catalog = await response.json();
       normalizeState();
@@ -283,9 +355,9 @@
       updateSummary();
       renderGrid();
       updatePreview();
-      el.status.textContent = "Выбери вариант — превью обновится сразу.";
+      el.status.textContent = s.select;
     } catch (error) {
-      el.status.textContent = "Не удалось загрузить каталог. Обнови страницу.";
+      el.status.textContent = s.catalogFailed;
     }
     el.apply.addEventListener("click", applySelection);
     el.close.addEventListener("click", () => {
@@ -293,7 +365,7 @@
       else window.close();
     });
     el.preview.addEventListener("load", () => {
-      el.status.textContent = "Выбери вариант и нажми «Применить в боте».";
+      el.status.textContent = s.applyHint;
     });
   }
 

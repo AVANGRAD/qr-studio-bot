@@ -13,6 +13,7 @@ from aiogram.types import (
     WebAppInfo,
 )
 
+from ..i18n import current_lang, t
 from ..services import webapp_entry_url, webapp_url
 from ..states import Flow
 from ..webapp_settings import apply_settings, sanitize_settings
@@ -28,26 +29,26 @@ async def on_web_app_data(message: Message, state: FSMContext) -> None:
     try:
         payload = json.loads(raw)
     except (TypeError, ValueError):
-        await message.answer("Не удалось прочитать настройки. Открой редактор ещё раз.")
+        await message.answer(t("settings_bad_json"))
         return
     if not isinstance(payload, dict):
-        await message.answer("Не удалось прочитать настройки. Открой редактор ещё раз.")
+        await message.answer(t("settings_bad_json"))
         return
     draft = get_draft(await state.get_data())
     if draft is None:
         pending = sanitize_settings(payload)
         if not pending:
-            await message.answer("Не удалось прочитать настройки. Попробуй выбрать другой вариант.")
+            await message.answer(t("settings_bad_values"))
             return
         data = await state.get_data()
         data["pending_webapp"] = pending
         await state.set_data(data)
         await state.set_state(Flow.content)
-        await message.answer("Настройки сохранены. Пришли ссылку или текст — применю их.")
+        await message.answer(t("settings_pending_saved"))
         return
 
     if not sanitize_settings(payload):
-        await message.answer("Настройки не изменились. Попробуй выбрать другой вариант.")
+        await message.answer(t("settings_unchanged"))
         return
     apply_settings(draft, payload)
     await send_preview(message, state, draft, size=640)
@@ -56,13 +57,13 @@ async def on_web_app_data(message: Message, state: FSMContext) -> None:
 @router.message(Command("app"))
 async def open_app(message: Message, state: FSMContext) -> None:
     if getattr(message.chat, "type", "private") != "private":
-        await message.answer("Визуальный редактор доступен в личном чате с ботом.")
+        await message.answer(t("webapp_private"))
         return
     draft = get_draft(await state.get_data())
-    url = webapp_url(draft) if draft is not None else webapp_entry_url()
+    url = webapp_url(draft) if draft is not None else webapp_entry_url(current_lang.get())
     await message.answer(
-        "Открой визуальный редактор:",
+        t("webapp_open"),
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[[InlineKeyboardButton(text="Открыть редактор", web_app=WebAppInfo(url=url))]]
+            inline_keyboard=[[InlineKeyboardButton(text=t("webapp_open_button"), web_app=WebAppInfo(url=url))]]
         ),
     )

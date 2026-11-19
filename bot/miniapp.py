@@ -16,11 +16,19 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Chat, Message, Update, User, WebAppData
 from aiohttp import web
 
-from qrstudio.eyes import eye_keys, eye_name
-from qrstudio.masks import SHAPE_CATEGORIES, SHAPES, shape_name
-from qrstudio.presets import PALETTES, PRESETS, get_palette, get_preset
+from qrstudio.eyes import eye_keys
+from qrstudio.masks import SHAPE_CATEGORIES, SHAPES
+from qrstudio.presets import PALETTES, PRESETS, get_preset
 from qrstudio.render import RenderOptions, render
-from qrstudio.shapes import MODULE_STYLES, style_name
+from qrstudio.shapes import MODULE_STYLES
+
+from .i18n import (
+    DEFAULT_LANG,
+    SUPPORTED_LANGS,
+    category_key,
+    display_name,
+    resolve_lang,
+)
 
 logger = logging.getLogger(__name__)
 BOT_KEY = web.AppKey("qrstudio_bot", object)
@@ -42,26 +50,28 @@ def _card(kind: str, key: str, name: str, **extra) -> dict:
     return {"key": key, "name": name, "thumb": f"/app/thumbs/{kind}/{key}.png?v=variety1", **extra}
 
 
-def catalog() -> dict:
+def catalog(lang: str = DEFAULT_LANG) -> dict:
+    lang = lang if lang in SUPPORTED_LANGS else DEFAULT_LANG
     shapes = []
     for category, keys in SHAPE_CATEGORIES.items():
+        key = category_key(category)
         shapes.append(
             {
-                "key": category,
-                "name": category,
-                "items": [_card("shape", key, shape_name(key)) for key in keys],
+                "key": key,
+                "name": display_name("category", key, lang),
+                "items": [_card("shape", item, display_name("shape", item, lang)) for item in keys],
             }
         )
-    modules = [_card("module", key, style_name(key)) for key in MODULE_STYLES]
-    eyes = [_card("eye", key, eye_name(key)) for key in eye_keys()]
-    palettes = [_card("palette", key, get_palette(key).name) for key in PALETTES]
+    modules = [_card("module", key, display_name("module", key, lang)) for key in MODULE_STYLES]
+    eyes = [_card("eye", key, display_name("eye", key, lang)) for key in eye_keys()]
+    palettes = [_card("palette", key, display_name("palette", key, lang)) for key in PALETTES]
     presets = []
     for key, preset in PRESETS.items():
         presets.append(
             _card(
                 "preset",
                 key,
-                preset.name,
+                display_name("preset", key, lang),
                 shape=preset.shape,
                 module_style=preset.module_style,
                 eye_style=preset.eye_style,
@@ -165,8 +175,9 @@ async def index(_: web.Request) -> web.StreamResponse:
     return web.FileResponse(WEBAPP_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
 
-async def catalog_handler(_: web.Request) -> web.Response:
-    return web.json_response(catalog(), dumps=lambda value: json.dumps(value, ensure_ascii=False), headers={"Cache-Control": "no-cache"})
+async def catalog_handler(request: web.Request) -> web.Response:
+    lang = resolve_lang(request.query.get("lang"))
+    return web.json_response(catalog(lang), dumps=lambda value: json.dumps(value, ensure_ascii=False), headers={"Cache-Control": "no-cache"})
 
 
 async def thumb_handler(request: web.Request) -> web.Response:
@@ -201,11 +212,17 @@ async def apply_handler(request: web.Request) -> web.Response:
     except (ValueError, KeyError, TypeError, json.JSONDecodeError):
         raise web.HTTPUnauthorized(text="invalid init data")
     first_name = str(user_data.get("first_name") or "User")
+    language_code = user_data.get("language_code")
     message = Message(
         message_id=1,
         date=datetime.now(UTC),
         chat=Chat(id=user_id, type="private"),
-        from_user=User(id=user_id, is_bot=False, first_name=first_name),
+        from_user=User(
+            id=user_id,
+            is_bot=False,
+            first_name=first_name,
+            language_code=language_code if isinstance(language_code, str) else None,
+        ),
         web_app_data=WebAppData(data=json.dumps(settings, ensure_ascii=False), button_text="QR Studio"),
     )
     update = Update(update_id=int(time.time() * 1000), message=message)

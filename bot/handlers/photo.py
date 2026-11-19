@@ -10,11 +10,11 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from ..i18n import t
 from ..keyboards import photo_menu
 from ..services import ContentError, prepare_uploaded_photo
 from ..states import Flow
-from ..texts import PHOTO_NEEDED, PHOTO_PROMPT
-from .common import get_draft, send_preview
+from .common import clear_flow, get_draft, send_preview
 
 router = Router(name="photo")
 logger = logging.getLogger(__name__)
@@ -33,10 +33,7 @@ async def photo_root(callback: CallbackQuery, state: FSMContext) -> None:
     draft = get_draft(await state.get_data())
     await _show(
         callback,
-        "<b>Фото + QR</b>\n\n"
-        "Пришли фотографию — она станет фоном. QR будет на светлой карточке "
-        "в правом нижнем углу, поэтому фотография останется видимой.\n\n"
-        "Лучше выбирать фото с крупным объектом и свободным местом в углу.",
+        t("photo_root"),
         photo_menu(draft),
     )
 
@@ -45,7 +42,7 @@ async def photo_root(callback: CallbackQuery, state: FSMContext) -> None:
 async def photo_upload(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     await state.set_state(Flow.photo)
-    await callback.message.answer(PHOTO_PROMPT)
+    await callback.message.answer(t("photo_prompt"))
 
 
 @router.callback_query(F.data == "photo:clear")
@@ -55,10 +52,10 @@ async def photo_clear(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_data(data)
     draft = get_draft(data)
     if draft is None:
-        await callback.answer("Фото убрано")
+        await callback.answer(t("photo_cleared"))
         return
     draft.photo_bytes = None
-    await callback.answer("Фото убрано")
+    await callback.answer(t("photo_cleared"))
     await send_preview(callback.message, state, draft, size=640)
 
 
@@ -75,21 +72,21 @@ async def photo_message(message: Message, state: FSMContext, bot: Bot) -> None:
 async def document_photo(message: Message, state: FSMContext, bot: Bot) -> None:
     document = message.document
     if document is None or not (document.mime_type or "").startswith("image/"):
-        await message.answer("Это не картинка. Пришли PNG, JPG или WebP.")
+        await message.answer(t("not_image"))
         return
     await _accept_photo(message, state, bot, document)
 
 
 @router.message(StateFilter(Flow.photo), F.text)
 async def photo_text(message: Message) -> None:
-    await message.answer(PHOTO_NEEDED)
+    await message.answer(t("photo_needed"))
 
 
 async def _accept_photo(message: Message, state: FSMContext, bot: Bot, file) -> None:
     if getattr(file, "file_size", None) and file.file_size > 12 * 1024 * 1024:
-        await message.answer("Фото больше 12 МБ. Пришли картинку поменьше.")
+        await message.answer(t("photo_too_large"))
         return
-    await message.answer("Обрабатываю фото…")
+    await message.answer(t("photo_processing"))
     buffer = io.BytesIO()
     try:
         await bot.download(file, destination=buffer)
@@ -99,7 +96,7 @@ async def _accept_photo(message: Message, state: FSMContext, bot: Bot, file) -> 
         return
     except Exception:
         logger.exception("photo download failed")
-        await message.answer("Не удалось скачать фото. Попробуй ещё раз.")
+        await message.answer(t("photo_download_failed"))
         return
     data = await state.get_data()
     draft = get_draft(data)
@@ -107,9 +104,9 @@ async def _accept_photo(message: Message, state: FSMContext, bot: Bot, file) -> 
         data["pending_photo"] = prepared
         await state.set_data(data)
         await state.set_state(None)
-        await message.answer("Фото сохранено. Теперь пришли ссылку или текст для QR.")
+        await message.answer(t("photo_saved"))
         return
     draft.photo_bytes = prepared
-    await state.clear()
-    await message.answer("Фото добавлено — QR будет на карточке в углу.")
+    await clear_flow(state)
+    await message.answer(t("photo_added"))
     await send_preview(message, state, draft, size=640)

@@ -9,6 +9,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, InputMediaPhoto, Message
 
+from ..i18n import SUPPORTED_LANGS, t
 from ..keyboards import editor_kb
 from ..services import Draft, caption, png_bytes, run_render, short
 
@@ -17,6 +18,14 @@ logger = logging.getLogger(__name__)
 
 def get_draft(data: dict) -> Draft | None:
     return Draft.from_data(data)
+
+
+async def clear_flow(state: FSMContext) -> None:
+    data = await state.get_data()
+    lang = data.get("lang")
+    await state.clear()
+    if lang in SUPPORTED_LANGS:
+        await state.set_data({"lang": lang})
 
 
 def _webapp_enabled(chat: object) -> bool:
@@ -99,6 +108,6 @@ async def send_document(bot: Bot, chat_id: int, draft: Draft, kind: str) -> None
             bot,
             chat_id,
             document,
-            f"<b>QR Studio</b> · SVG\n<code>{html.escape(short(draft.content))}</code>",
+            t("svg_caption", content=html.escape(short(draft.content))),
             disable_content_type_detection=True,
         )

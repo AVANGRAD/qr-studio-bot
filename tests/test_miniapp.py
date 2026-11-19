@@ -25,6 +25,15 @@ def test_catalog_counts() -> None:
     assert data["sizes"] == [512, 1024, 2048]
 
 
+def test_catalog_languages() -> None:
+    ru = catalog("ru")
+    en = catalog("en")
+    assert ru["shapes"][0]["name"] == "Геометрия"
+    assert en["shapes"][0]["name"] == "Geometry"
+    assert en["shapes"][0]["items"][0]["name"] == "Square"
+    assert en["presets"][0]["name"] == "Golden leaf"
+
+
 def test_thumb_png_and_leaf() -> None:
     leaf = thumb_bytes("shape", "leaf")
     assert leaf.startswith(b"\x89PNG\r\n\x1a\n")
@@ -51,11 +60,14 @@ def test_webapp_url() -> None:
 TOKEN = "123456:test-token"
 
 
-def _signed_init_data(user_id: int, auth_date: int | None = None) -> str:
+def _signed_init_data(user_id: int, auth_date: int | None = None, language_code: str | None = None) -> str:
+    user = {"id": user_id, "first_name": "Test"}
+    if language_code:
+        user["language_code"] = language_code
     pairs = {
         "auth_date": str(auth_date or int(time.time())),
         "query_id": "test-query",
-        "user": json.dumps({"id": user_id, "first_name": "Test"}, separators=(",", ":")),
+        "user": json.dumps(user, separators=(",", ":")),
     }
     check_string = "\n".join(f"{key}={value}" for key, value in sorted(pairs.items()))
     secret = hmac.new(b"WebAppData", TOKEN.encode(), hashlib.sha256).digest()
@@ -83,10 +95,17 @@ def test_validate_init_data_rejects_expired() -> None:
 async def test_apply_endpoint_dispatches_to_bot() -> None:
     class FakeDispatcher:
         def __init__(self) -> None:
-            self.calls: list[tuple[str, str, int]] = []
+            self.calls: list[tuple[str, str, int, str | None]] = []
 
         async def feed_update(self, bot, update) -> None:
-            self.calls.append((bot.token, update.message.web_app_data.data, update.message.chat.id))
+            self.calls.append(
+                (
+                    bot.token,
+                    update.message.web_app_data.data,
+                    update.message.chat.id,
+                    update.message.from_user.language_code,
+                )
+            )
 
     dispatcher = FakeDispatcher()
     app = web.Application()
@@ -96,14 +115,15 @@ async def test_apply_endpoint_dispatches_to_bot() -> None:
     try:
         response = await client.post(
             "/app/apply",
-            json={"init_data": _signed_init_data(42), "data": {"shape": "leaf", "size": 512}},
+            json={"init_data": _signed_init_data(42, language_code="en-US"), "data": {"shape": "leaf", "size": 512}},
         )
         assert response.status == 200
         assert dispatcher.calls
-        token, raw, chat_id = dispatcher.calls[0]
+        token, raw, chat_id, language_code = dispatcher.calls[0]
         assert token == TOKEN
         assert json.loads(raw) == {"shape": "leaf", "size": 512}
         assert chat_id == 42
+        assert language_code == "en-US"
 
         bad = await client.post(
             "/app/apply",

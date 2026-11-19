@@ -16,6 +16,7 @@ from aiohttp import ClientSession, web
 from .config import Settings
 from .errors import error_handler
 from .handlers import create, logo, menu, photo, settings, start, webapp
+from .i18n import LanguageMiddleware, t, use_lang
 from .miniapp import setup as setup_miniapp
 from .services import webapp_entry_url
 
@@ -42,6 +43,7 @@ def build() -> tuple[Bot, Dispatcher, Settings]:
     cfg = Settings.from_env()
     bot = Bot(token=cfg.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=MemoryStorage())
+    dp.update.outer_middleware(LanguageMiddleware())
     dp.include_router(start.router)
     dp.include_router(webapp.router)
     dp.include_router(logo.router)
@@ -54,14 +56,19 @@ def build() -> tuple[Bot, Dispatcher, Settings]:
 
 
 async def set_commands(bot: Bot) -> None:
-    await bot.set_my_commands(
-        [
-            BotCommand(command="start", description="Начать"),
-            BotCommand(command="app", description="Визуальный редактор"),
-            BotCommand(command="qr", description="Создать QR из текста"),
-            BotCommand(command="help", description="Справка"),
+    def commands() -> list[BotCommand]:
+        return [
+            BotCommand(command="start", description=t("cmd_start")),
+            BotCommand(command="language", description=t("cmd_language")),
+            BotCommand(command="app", description=t("cmd_app")),
+            BotCommand(command="qr", description=t("cmd_qr")),
+            BotCommand(command="help", description=t("cmd_help")),
         ]
-    )
+
+    with use_lang("en"):
+        await bot.set_my_commands(commands())
+    with use_lang("ru"):
+        await bot.set_my_commands(commands(), language_code="ru")
 
 
 async def set_menu_button(bot: Bot) -> None:
