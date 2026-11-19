@@ -1,6 +1,6 @@
 # Project State
 
-Обновлено: 2026-11-18
+Обновлено: 2026-11-19
 
 ## Готово
 
@@ -13,25 +13,27 @@
 - `Draft.logo_label` хранит название иконки; подпись и кнопка редактора показывают выбранную иконку и режим.
 - Рендер PNG/SVG, монограммы, safe-fallback, контраст, фото-режим.
 - Telegram-бот на aiogram: меню, FSM, превью, PNG/SVG, лимиты.
-- Telegram Mini App: `/app`, каталог, превью, 134 статические плитки, cache-bust `?v=variety1`, `WebApp.sendData`.
+- Telegram Mini App: `/app`, каталог, превью, 134 статические плитки, cache-bust `?v=variety1`; Apply через подписанный `POST /app/apply` + fallback `WebApp.sendData`.
 - Mini App доступен кнопкой меню «QR Studio», командой `/app` и кнопкой «Выбрать визуально» в редакторе; для групп скрыт (только private).
 - Настройки, выбранные до создания QR, сохраняются как `pending_webapp` и применяются к следующему тексту.
 - QR встроен в силуэт: 36 из 51 не-square формы рендерятся без плашки; 15 сложных форм безопасно откатываются в frame с предупреждением.
 - Фото-режим: фото полностью вписывается, фон — размытая cover-копия; QR на светлой карточке 42% справа снизу (`photo_inset=0.055`, `photo_opacity=244`).
 - Фото-поддержка в PNG/SVG; `Draft.photo_bytes`, `prepare_uploaded_photo`, `Flow.photo`, `bot/handlers/photo.py`, кнопки «Фото + QR»/«Фото»; загрузка до и после текста.
-- `pytest`: 42 теста проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
+- `pytest`: 46 тестов проходят; `ruff` без ошибок; `node --check webapp/app.js` OK.
 - `scripts/check_scans.py`: 262/262 QR декодируются, включая 52 формы в figure-режиме, 25 пресетов, 12 встроенных иконок и фото-сценарии.
-- GitHub HEAD: `e12f6f5` (docs), feature-коммит `0e01ca3`; расширение запушено в `master`.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `e12f6f5`.
-- `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; live-каталог 52/24/14/19/25; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
+- GitHub HEAD: `ed3639e`; Apply fix `6c35f98`, cache-bust `ed3639e`; `master` запушен.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com, live deploy `ed3639e`.
+- `/healthz`, `/app`, `/app/catalog.json`, `/app/preview.png` отвечают 200; live-каталог 52/24/14/19/25; live `app.js` содержит `/app/apply`, HTML подключает `?v=apply1`; webhook pending 0, ошибок нет; бот `@QUaRc0De_bot` id `9062123985`.
 
 ## Осталось
 
+- Живая проверка Apply в Telegram: menu/inline и keyboard-сценарий.
 - Живая проверка в Telegram: фото, фото + логотип, фото-первый сценарий, новые формы/узоры/глаза, встроенные иконки и режим «Медальон».
 - Проверить экстремальные комбинации вроде `frog + flower + spark` на 512–640 px: локально они могут не декодироваться, на 1024 px проходят.
 - Проверить, что новая карточка фото не закрывает важный объект; при необходимости изменить `photo_card`/`photo_inset`.
 - Решить, нужен ли UI-переключатель «в фигуре / с плашкой»; сейчас figure-режим включён по умолчанию.
 - При необходимости добавить скриншоты/примеры Mini App и фото-режима в README.
+- Уточнить запрос «QR на QR»: центральный логотип поверх QR или буквальное наложение QR на QR.
 
 ## Известные ограничения
 
@@ -40,6 +42,7 @@
 - В фото-режиме фото уменьшается до 1600 px; итоговый QR PNG/SVG остаётся векторным (модули), фото — растровое.
 - Free Render засыпает; self-ping 600 с; первый запуск после сна около минуты.
 - Mini App требует HTTPS; загрузка фото и своих файлов в Mini App не поддерживается.
+- `WebApp.sendData` не работает для menu/inline Mini App; для них используется серверный `/app/apply` с подписанным `initData`.
 - Статические плитки нужно пересобирать после изменения каталога: `python scripts/build_miniapp_thumbs.py`.
 - 15 сложных силуэтов (`moon`, `snowflake`, `wave`, `fox`, `ladybug`, `turtle`, `penguin`, `frog`, `whale`, `mask`, `rocket`, `guitar`, `pumpkin`, `anchor`, `music_note`) используют безопасную плашку.
 - Встроенные иконки нейтральные, без брендовых логотипов; брендовый знак можно загрузить своим файлом.

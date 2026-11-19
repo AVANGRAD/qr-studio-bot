@@ -7,7 +7,7 @@
 - Для рискованных глаз и модулей — безопасная база + лёгкий overlay.
 - SVG: силуэт/логотип как встроенный PNG, QR-модули векторные — точное совпадение с PNG.
 - Лимит контента 1200 символов: баланс плотности QR и читаемости.
-- Mini App отдаётся тем же aiohttp-сервером по `/app`; выбор приходит в бота через `WebApp.sendData` и валидируется handler-ом.
+- Mini App отдаётся тем же aiohttp-сервером по `/app`; выбор приходит в бота через `POST /app/apply` с подписанным `initData` и валидируется handler-ом. `WebApp.sendData` оставлен только fallback для keyboard-кнопок.
 - Плитки Mini App — статические PNG в `webapp/thumbs/`, чтобы Render не тратил CPU на 105 превью при каждом открытии.
 - Кнопка Mini App добавляется только в private-чатах: Telegram не поддерживает `web_app` в группах.
 - `WEBHOOK_SECRET` не генерируется через Render `generateValue`; допустимый секрет — URL-safe/hex, иначе `Settings` хэширует его.
@@ -30,3 +30,6 @@
 - `flower` использует безопасную базу `dot` + overlay: одиночная фигура с внутренним вырезом давала scan-провал на 512 px.
 - `capsule`, `octagon` и `spark` проверены как самостоятельные безопасные формы глаз; `heart` оставлен на safe-base, потому что сердце в центре ломает finder-паттерн.
 - Мини-каталог расширен до 134 плиток; cache-bust поднят до `?v=variety1`.
+
+- `sendData` не используется как основной путь: menu/inline Mini App его не поддерживают. Серверный Apply проверяет HMAC `WebAppData` и `auth_date` (6 часов), затем передаёт synthetic `web_app_data` в тот же dispatcher.
+- `app.js` подключается с cache-bust (`?v=apply1`), иначе Telegram WebView может держать старый JS после деплоя.

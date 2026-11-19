@@ -9,3 +9,4 @@
 - [Итоги](summaries/2026-11-18.md)
 - [Итог: фото-режим](summaries/2026-11-18-photo.md)
 - [Итог: расширение каталога](summaries/2026-11-18-expansion.md)
+- [Итог: Apply в Mini App](summaries/2026-11-19-miniapp-apply.md)

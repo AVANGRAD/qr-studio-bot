@@ -47,6 +47,16 @@
 - `pytest` 38/38, `ruff` OK, scans 187/187; feature-коммит `c5dfbe5`.
 - Feature deploy `c5dfbe5` live; docs-коммит `b78954e`; `/healthz`, `/app`, catalog и preview 200; webhook pending 0.
 
+## 2026-11-19 — Apply в Mini App
+
+- Причина бага: `WebApp.sendData` не работает для Mini App, открытых из menu/inline.
+- Добавлен `POST /app/apply`: проверка HMAC `initData` и `auth_date`, synthetic `web_app_data`, `Dispatcher.feed_update`.
+- `webapp/app.js` отправляет `initData` на сервер; `sendData` оставлен fallback для keyboard-кнопок.
+- Preview теперь отправляется и при повторном применении тех же настроек.
+- `app.js?v=apply1` для сброса кэша Telegram WebView.
+- Проверки: pytest 46/46, ruff OK, `node --check` OK, scans 262/262.
+- Коммиты `6c35f98`, `ed3639e`; Render live; `/app/apply` 400 без initData, live JS содержит endpoint; webhook pending 0.
+
 ## 2026-11-18 — расширение каталога и встроенные логотипы
 
 - Формы: +8 (`squircle`, `burst`, `clover`, `cactus`, `frog`, `whale`, `anchor`, `music_note`), всего 52.

@@ -49,3 +49,11 @@
 - Причина: overlay-фигура с внутренним вырезом давала слишком мало тёмного покрытия при мелком модуле.
 - Исправление: `MODULE_BASE_STYLES["flower"] = "dot"` — безопасная база плюс цветочный overlay.
 - Проверка: 262/262 scan, включая `flower` и `forest`.
+
+## 2026-11-19 — Apply в Mini App не возвращает настройки
+
+- Симптом: кнопка «Применить» закрывает редактор, но превью в боте не обновляется.
+- Причина: `WebApp.sendData` доставляет данные только для Mini App, открытых с keyboard-кнопки; menu/inline-кнопки этот вызов игнорируют.
+- Исправление: `POST /app/apply` с `initData`, HMAC-проверка, synthetic `web_app_data` и `Dispatcher.feed_update`; `sendData` оставлен fallback.
+- Дополнительно: preview отправляется даже при повторном применении тех же настроек; `app.js?v=apply1` сбрасывает кэш WebView.
+- Проверка: pytest 46/46, scans 262/262, live `/app/apply` 400 без initData; живой Telegram-тест за пользователем.
