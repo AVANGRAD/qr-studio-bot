@@ -100,7 +100,7 @@ async def run_webhook(
         raise RuntimeError("Set WEBHOOK_BASE_URL or RENDER_EXTERNAL_URL for webhook mode")
     if not settings.webhook_secret:
         raise RuntimeError("WEBHOOK_SECRET is empty")
-    path = f"/webhook/{settings.webhook_secret}"
+    path = settings.webhook_path
     webhook_url = settings.webhook_base_url + path
     app = web.Application()
     app.router.add_get("/", health)
@@ -120,7 +120,7 @@ async def run_webhook(
             allowed_updates=dp.resolve_used_update_types(),
             drop_pending_updates=True,
         )
-        logger.info("webhook set: %s", webhook_url)
+        logger.info("webhook set: %s/webhook/***", settings.webhook_base_url.rstrip("/"))
         if support is not None:
             try:
                 await support.set_commands()

@@ -16,9 +16,12 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 from .config import Settings
+from .db import ssl_context
 from .i18n import resolve_lang, t, use_lang
+from .services import RateLimiter
 
 logger = logging.getLogger(__name__)
+support_rate_limiter = RateLimiter(per_minute=5, per_hour=30, per_day=100)
 
 SUPPORT_SCHEMA = (
     "CREATE SCHEMA IF NOT EXISTS support",
@@ -55,13 +58,10 @@ class SupportStore:
                 max_size=2,
                 timeout=10,
                 command_timeout=5,
-                ssl="require",
+                ssl=ssl_context(),
                 statement_cache_size=0,
                 server_settings={"application_name": "qr-studio-support"},
             )
-            async with self._pool.acquire() as connection:
-                for statement in SUPPORT_SCHEMA:
-                    await connection.execute(statement)
             logger.info("support database connected")
         except Exception:
             logger.exception("support database connection failed; using memory mapping")
@@ -144,13 +144,23 @@ async def support_help(message: Message) -> None:
         await message.answer(t("support_help"))
 
 
-async def _user_message(message: Message, bot: Bot, store: SupportStore, admin_id: int) -> None:
+async def _user_message(
+    message: Message,
+    bot: Bot,
+    store: SupportStore,
+    admin_id: int,
+    limiter: RateLimiter,
+) -> None:
     user = message.from_user
     assert user is not None
     lang = _lang_for(message)
     with use_lang(lang):
         if message.chat.type != "private":
             await message.answer(t("support_private_only"))
+            return
+        allowed, _ = limiter.allow(user.id)
+        if not allowed:
+            await message.answer(t("support_rate_limited"))
             return
         try:
             forwarded = await bot.forward_message(
@@ -217,6 +227,7 @@ async def support_message(
     bot: Bot,
     support_store: SupportStore | None = None,
     admin_id: int | None = None,
+    limiter: RateLimiter | None = None,
 ) -> None:
     if support_store is None or admin_id is None:
         with use_lang(_lang_for(message)):
@@ -227,7 +238,7 @@ async def support_message(
     if message.from_user.id == admin_id:
         await _admin_message(message, bot, support_store, admin_id)
         return
-    await _user_message(message, bot, support_store, admin_id)
+    await _user_message(message, bot, support_store, admin_id, limiter or support_rate_limiter)
 
 
 class SupportBot:
@@ -239,7 +250,7 @@ class SupportBot:
         self.settings = settings
         self.admin_id = settings.admin_id
         self.secret = settings.support_webhook_secret
-        self.path = f"/support/webhook/{self.secret}"
+        self.path = settings.support_webhook_path
         self.bot = Bot(
             token=settings.support_bot_token,
             default=DefaultBotProperties(parse_mode=ParseMode.HTML),

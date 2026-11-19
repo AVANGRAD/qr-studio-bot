@@ -6,6 +6,10 @@ import re
 from dataclasses import dataclass
 
 
+def _webhook_path_token(secret: str, purpose: str) -> str:
+    return hashlib.sha256(f"{purpose}-path:{secret}".encode()).hexdigest()[:32]
+
+
 @dataclass(frozen=True)
 class Settings:
     bot_token: str
@@ -22,6 +26,14 @@ class Settings:
     max_logo_bytes: int = 6 * 1024 * 1024
     preview_size: int = 640
     version: str = "1.0.0"
+
+    @property
+    def webhook_path(self) -> str:
+        return f"/webhook/{_webhook_path_token(self.webhook_secret or '', 'main')}"
+
+    @property
+    def support_webhook_path(self) -> str:
+        return f"/support/webhook/{_webhook_path_token(self.support_webhook_secret or '', 'support')}"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -40,15 +52,15 @@ class Settings:
         base = (os.getenv("WEBHOOK_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").strip().rstrip("/") or None
         secret = (os.getenv("WEBHOOK_SECRET") or "").strip() or None
         if secret is not None and not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", secret):
-            secret = hashlib.sha256(secret.encode("utf-8")).hexdigest()[:40]
+            secret = hashlib.sha256(secret.encode()).hexdigest()[:40]
         if secret is None and mode == "webhook":
-            secret = hashlib.sha256(token.encode("utf-8")).hexdigest()[:40]
+            secret = hashlib.sha256(token.encode()).hexdigest()[:40]
         support_token = (os.getenv("SUPPORT_BOT_TOKEN") or "").strip() or None
         support_secret = (os.getenv("SUPPORT_WEBHOOK_SECRET") or "").strip() or None
         if support_secret is not None and not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", support_secret):
-            support_secret = hashlib.sha256(support_secret.encode("utf-8")).hexdigest()[:40]
+            support_secret = hashlib.sha256(support_secret.encode()).hexdigest()[:40]
         if support_secret is None and support_token:
-            support_secret = hashlib.sha256(("support:" + support_token).encode("utf-8")).hexdigest()[:40]
+            support_secret = hashlib.sha256(("support:" + support_token).encode()).hexdigest()[:40]
         admin = os.getenv("ADMIN_ID", "").strip()
         database_url = (os.getenv("DATABASE_URL") or "").strip() or None
         return cls(

@@ -276,8 +276,9 @@ def prepare_uploaded_logo(raw: bytes) -> bytes:
 
 
 class RateLimiter:
-    def __init__(self, per_minute: int = 14, per_day: int = 240) -> None:
+    def __init__(self, per_minute: int = 14, per_day: int = 240, per_hour: int = 0) -> None:
         self.per_minute = per_minute
+        self.per_hour = per_hour
         self.per_day = per_day
         self._events: dict[int, deque[float]] = defaultdict(deque)
 
@@ -288,10 +289,15 @@ class RateLimiter:
             events.popleft()
         if sum(1 for value in events if now - value <= 60) >= self.per_minute:
             return False, t("rate_minute")
+        if self.per_hour and sum(1 for value in events if now - value <= 3600) >= self.per_hour:
+            return False, t("rate_hour")
         if len(events) >= self.per_day:
             return False, t("rate_day")
         events.append(now)
         return True, ""
+
+    def reset(self) -> None:
+        self._events.clear()
 
 
 rate_limiter = RateLimiter()

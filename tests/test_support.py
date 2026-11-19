@@ -6,6 +6,7 @@ import pytest
 from aiogram.types import Chat, User
 
 from bot.i18n import use_lang
+from bot.services import RateLimiter
 from bot.support import SupportStore, _ticket_header, support_message
 
 
@@ -97,3 +98,17 @@ async def test_support_requires_private_chat_and_admin_context() -> None:
     stranger = FakeMessage(_user(42), chat_type="private")
     await support_message(stranger, bot, support_store=None, admin_id=None)
     assert stranger.answers == ["Поддержка ещё не настроена."]
+
+
+@pytest.mark.asyncio
+async def test_support_rate_limits_user_messages() -> None:
+    store = SupportStore(None)
+    await store.connect()
+    bot = FakeBot()
+    limiter = RateLimiter(per_minute=1, per_hour=10, per_day=10)
+    first = FakeMessage(_user(42), message_id=7)
+    await support_message(first, bot, support_store=store, admin_id=99, limiter=limiter)
+    second = FakeMessage(_user(42), message_id=8)
+    await support_message(second, bot, support_store=store, admin_id=99, limiter=limiter)
+    assert len(bot.forwarded) == 1
+    assert second.answers == ["Слишком много сообщений. Подожди немного и попробуй снова."]

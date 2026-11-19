@@ -22,6 +22,7 @@ from qrstudio.presets import PALETTES, PRESETS, get_preset
 from qrstudio.render import RenderOptions, render
 from qrstudio.shapes import MODULE_STYLES
 
+from .abuse import SlidingWindowLimiter
 from .i18n import (
     DEFAULT_LANG,
     SUPPORTED_LANGS,
@@ -29,8 +30,11 @@ from .i18n import (
     display_name,
     resolve_lang,
 )
+from .services import RateLimiter, render_semaphore
 
 logger = logging.getLogger(__name__)
+preview_limiter = SlidingWindowLimiter(limit=40, window=60)
+apply_limiter = RateLimiter(per_minute=10, per_day=100)
 BOT_KEY = web.AppKey("qrstudio_bot", object)
 DISPATCHER_KEY = web.AppKey("qrstudio_dispatcher", object)
 WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
@@ -103,8 +107,11 @@ def validate_init_data(init_data: str, bot_token: str, max_age: int = 6 * 3600) 
         auth_date = int(pairs.get("auth_date", "0"))
     except (TypeError, ValueError) as exc:
         raise ValueError("invalid auth_date") from exc
-    if time.time() - auth_date > max_age:
+    now = time.time()
+    if now - auth_date > max_age:
         raise ValueError("expired init data")
+    if auth_date > now + 300:
+        raise ValueError("init data from future")
     return pairs
 
 
@@ -190,7 +197,16 @@ async def thumb_handler(request: web.Request) -> web.Response:
     return web.Response(body=payload, content_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
+def _client_ip(request: web.Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",", 1)[0].strip()
+    return request.remote or "unknown"
+
+
 async def apply_handler(request: web.Request) -> web.Response:
+    if request.content_type != "application/json":
+        raise web.HTTPUnsupportedMediaType(text="application/json required")
     try:
         body = await request.json()
     except (json.JSONDecodeError, ValueError):
@@ -211,6 +227,8 @@ async def apply_handler(request: web.Request) -> web.Response:
         user_id = int(user_data["id"])
     except (ValueError, KeyError, TypeError, json.JSONDecodeError):
         raise web.HTTPUnauthorized(text="invalid init data")
+    if not apply_limiter.allow(user_id)[0]:
+        raise web.HTTPTooManyRequests(text="rate limited", headers={"Retry-After": "60"})
     first_name = str(user_data.get("first_name") or "User")
     language_code = user_data.get("language_code")
     message = Message(
@@ -235,19 +253,32 @@ async def apply_handler(request: web.Request) -> web.Response:
 
 
 async def preview_handler(request: web.Request) -> web.Response:
+    if not preview_limiter.allow(_client_ip(request)):
+        raise web.HTTPTooManyRequests(text="rate limited", headers={"Retry-After": "60"})
     query = request.query
     try:
         size = int(query.get("size", "400"))
     except ValueError:
         size = 400
-    payload = await asyncio.to_thread(
-        preview_bytes,
-        query.get("shape", "square"),
-        query.get("module") or query.get("module_style", "dot"),
-        query.get("eye") or query.get("eye_style", "circle"),
-        query.get("palette", "blue"),
-        size,
-    )
+    semaphore = render_semaphore()
+    try:
+        await asyncio.wait_for(semaphore.acquire(), timeout=0.25)
+    except TimeoutError:
+        raise web.HTTPTooManyRequests(text="renderer busy", headers={"Retry-After": "5"}) from None
+    try:
+        payload = await asyncio.wait_for(
+            asyncio.to_thread(
+                preview_bytes,
+                query.get("shape", "square"),
+                query.get("module") or query.get("module_style", "dot"),
+                query.get("eye") or query.get("eye_style", "circle"),
+                query.get("palette", "blue"),
+                size,
+            ),
+            timeout=30,
+        )
+    finally:
+        semaphore.release()
     return web.Response(body=payload, content_type="image/png", headers={"Cache-Control": "no-store"})
 
 

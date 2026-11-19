@@ -83,8 +83,9 @@ def test_format_stats_ru_and_en() -> None:
 
 
 class FakeMessage:
-    def __init__(self) -> None:
+    def __init__(self, chat_type: str = "private") -> None:
         self.from_user = _user()
+        self.chat = Chat(id=42, type=chat_type)
         self.answers: list[str] = []
 
     async def answer(self, text: str, **kwargs) -> None:
@@ -119,6 +120,10 @@ async def test_stats_command_is_private_to_admin() -> None:
     unconfigured = FakeMessage()
     await stats_command(unconfigured, analytics=analytics, admin_id=None)
     assert not unconfigured.answers
+
+    group = FakeMessage(chat_type="group")
+    await stats_command(group, analytics=analytics, admin_id=42)
+    assert not group.answers
 
 
 @pytest.mark.asyncio

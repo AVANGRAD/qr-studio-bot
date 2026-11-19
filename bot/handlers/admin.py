@@ -88,6 +88,9 @@ async def stats_command(
 ) -> None:
     if admin_id is None or message.from_user is None or message.from_user.id != admin_id:
         return
+    chat = getattr(message, "chat", None)
+    if chat is not None and getattr(chat, "type", "private") != "private":
+        return
     if analytics is not None and not analytics.ready:
         await analytics.connect()
     if analytics is None or not analytics.ready:

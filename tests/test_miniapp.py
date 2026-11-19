@@ -11,8 +11,10 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
+from bot import miniapp
+from bot.abuse import SlidingWindowLimiter
 from bot.miniapp import catalog, preview_bytes, setup, thumb_bytes, validate_init_data
-from bot.services import Draft, webapp_url
+from bot.services import Draft, RateLimiter, webapp_url
 
 
 def test_catalog_counts() -> None:
@@ -91,6 +93,11 @@ def test_validate_init_data_rejects_expired() -> None:
         validate_init_data(_signed_init_data(42, int(time.time()) - 7 * 3600), TOKEN)
 
 
+def test_validate_init_data_rejects_future() -> None:
+    with pytest.raises(ValueError):
+        validate_init_data(_signed_init_data(42, int(time.time()) + 3600), TOKEN)
+
+
 @pytest.mark.asyncio
 async def test_apply_endpoint_dispatches_to_bot() -> None:
     class FakeDispatcher:
@@ -130,5 +137,42 @@ async def test_apply_endpoint_dispatches_to_bot() -> None:
             json={"init_data": _signed_init_data(42) + "tampered", "data": {"shape": "leaf"}},
         )
         assert bad.status == 401
+    finally:
+        await client.close()
+
+
+@pytest.mark.asyncio
+async def test_preview_endpoint_rate_limits(monkeypatch) -> None:
+    monkeypatch.setattr(miniapp, "preview_limiter", SlidingWindowLimiter(limit=1, window=60))
+    app = web.Application()
+    setup(app)
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    try:
+        first = await client.get("/app/preview.png?shape=leaf&size=280")
+        assert first.status == 200
+        second = await client.get("/app/preview.png?shape=leaf&size=280")
+        assert second.status == 429
+    finally:
+        await client.close()
+
+
+@pytest.mark.asyncio
+async def test_apply_endpoint_rate_limits(monkeypatch) -> None:
+    class FakeDispatcher:
+        async def feed_update(self, bot, update) -> None:
+            return None
+
+    monkeypatch.setattr(miniapp, "apply_limiter", RateLimiter(per_minute=1, per_day=10))
+    app = web.Application()
+    setup(app, bot=SimpleNamespace(token=TOKEN), dispatcher=FakeDispatcher())
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    try:
+        payload = {"init_data": _signed_init_data(42), "data": {"shape": "leaf"}}
+        first = await client.post("/app/apply", json=payload)
+        assert first.status == 200
+        second = await client.post("/app/apply", json=payload)
+        assert second.status == 429
     finally:
         await client.close()

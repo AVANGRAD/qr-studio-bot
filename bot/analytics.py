@@ -11,6 +11,8 @@ import asyncpg
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Update, User
 
+from .db import ssl_context
+
 logger = logging.getLogger(__name__)
 
 SCHEMA_STATEMENTS = (
@@ -229,13 +231,10 @@ class Analytics:
                 max_size=5,
                 timeout=10,
                 command_timeout=5,
-                ssl="require",
+                ssl=ssl_context(),
                 statement_cache_size=0,
                 server_settings={"application_name": "qr-studio-bot"},
             )
-            async with self._pool.acquire() as connection:
-                for statement in SCHEMA_STATEMENTS:
-                    await connection.execute(statement)
             logger.info("analytics database connected")
         except Exception:
             logger.exception("analytics database connection failed")
