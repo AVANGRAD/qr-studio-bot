@@ -46,8 +46,8 @@
 - [x] Получить Telegram ID администратора и задать `ADMIN_ID` локально и в Render.
 - [x] Закоммитить и задеплоить аналитику (`afe6edf`, deploy `dep-dbvf7jjm8hqs73b2r28g`).
 - [x] Live-проверка `/stats` через synthetic webhook: 200, запись в `analytics.users`/`analytics.events`, ошибок нет.
-- [ ] Задеплоить support/all-time и проверить live `/stats`, `/support`, webhook support-бота.
-- [ ] Попросить администратора нажать `/start` в `@QUaRc0DeSupport_bot`; без этого тикеты не доставляются.
+- [x] Задеплоить support/all-time (`f1f8f32`, deploy `dep-dbvfl1mq1p3s738ero7g`); live `/healthz` `support:true`, оба webhook pending 0, support route 200, `/stats` synthetic 200.
+- [ ] Администратору нажать `/start` в `@QUaRc0DeSupport_bot`; после этого проверить live-тикет.
 - [ ] При необходимости добавить рассылку с обработкой 403 для `blocked_at`.
 - [ ] Живая проверка picker/`/language`/EN/Mini App.
 - [ ] Живая проверка Apply в Telegram: menu/inline и keyboard.

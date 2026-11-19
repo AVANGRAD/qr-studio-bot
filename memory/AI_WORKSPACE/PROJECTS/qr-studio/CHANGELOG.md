@@ -8,7 +8,7 @@
 - В основном боте добавлена команда `/support` со ссылкой на `@QUaRc0DeSupport_bot` и пункт в меню команд.
 - `SUPPORT_BOT_TOKEN` добавлен в `.env`, `.env.example`, `render.yaml` и Render Environment; `SUPPORT_WEBHOOK_SECRET` выводится из токена.
 - Проверки: pytest 74/74, ruff OK; support webhook route 401 без секрета и 200 с секретом; `support.tickets` создана, тестовая строка удалена.
-- Live-деплой и проверка тикета ещё не выполнены.
+- Live deploy `f1f8f32` (`dep-dbvfl1mq1p3s738ero7g`): `/healthz` `support:true`, оба webhook pending 0, support route 200, `support database connected`, `support webhook set`, `/stats` synthetic 200. Live-тикет ждёт `/start` администратора в support-боте.
 
 ## 2026-11-19 — аналитика пользователей
 

@@ -29,13 +29,15 @@
 - `bot/services.set_menu_button()` обновляет per-chat menu button с `?lang=`; вызывается из `/start`, `/language` и Apply. Глобальная кнопка без `lang` остаётся fallback.
 - Команды бота: default English + `ru` scope; `set_commands` исправлен, чтобы default не зависел от ContextVar.
 - GitHub: feature `3f1062f`, docs `1d108fd`, docs `194d412`, feature `9654ddf`, analytics `afe6edf`, docs `b22e0b1`; `master` запушен.
-- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com; analytics feature `afe6edf` (`dep-dbvf7jjm8hqs73b2r28g`) live 2026-11-19 13:04 UTC; предыдущий docs deploy `7735743` — `dep-dbve0erm8hqs73b0u1ng`.
+- Render: `srv-dbun5pgjo6nc73ajoohg`, https://qr-studio-bot.onrender.com; support/all-time `f1f8f32` (`dep-dbvfl1mq1p3s738ero7g`) live 2026-11-19 13:32 UTC; предыдущий analytics deploy `afe6edf` (`dep-dbvf7jjm8hqs73b2r28g`).
 - Аналитика: `bot/analytics.py` подключается к Supabase PostgreSQL через `asyncpg`, создаёт `analytics.users`/`analytics.events`, пишет активность middleware и считает DAU/WAU/MAU; `/stats` доступен только при `ADMIN_ID`. В `/stats` добавлены события за всё время (`total_events`, `events_all`).
 - Схема аналитики: пользователь (`first_seen`, `last_seen`, `updates_count`, `starts_count`, `blocked_at`) и события (`start`, команды, сообщения, Mini App Apply, скачивания, смена настроек); текст сообщений и содержимое QR не сохраняются.
 - Новый Supabase PostgreSQL 17.12 проверен: таблицы созданы, тестовые пользователь/события записаны и удалены; `DATABASE_URL` добавлен в локальный `.env` и Render Environment.
 - `asyncpg==0.32.0` добавлен в `requirements.txt`, `DATABASE_URL` — в `.env.example` и `render.yaml`; `ADMIN_ID` найден через `getChat` и задан локально и в Render.
-- Актуальные проверки: `pytest` 74/74, `ruff` OK, scans 262/262; live-деплой аналитики выполнен; support/all-time код готов к деплою.
+- Актуальные проверки: `pytest` 74/74, `ruff` OK, scans 262/262; live-деплой support/all-time выполнен.
 - Поддержка: `bot/support.py` — отдельный `SupportBot` на `SUPPORT_BOT_TOKEN`, свой `Dispatcher` и webhook `/support/webhook/<secret>` на том же aiohttp-сервере. Сообщения пользователей пересылаются в `ADMIN_ID`, ответы администратора копируются пользователю; mapping хранится в `support.tickets` (fallback — память).
+- Live support/all-time: `/healthz` вернул `support: true`; main/support webhook pending 0, last_error пустой; логи `support database connected`, `support webhook set`, `analytics database connected`; support route 200 с secret; synthetic `/stats` 200 и событие записано.
+- Администратору отправлено сообщение в основном боте со ссылкой на `@QUaRc0DeSupport_bot`; support-бот пока не может писать админу до `/start` (`chat not found`), это ожидаемо.
 - Основной бот получил `/support` со ссылкой на `@QUaRc0DeSupport_bot`; команда добавлена в меню. `SUPPORT_BOT_TOKEN` задан локально и в Render Environment; `SUPPORT_WEBHOOK_SECRET` не задан и выводится из токена.
 - `SUPPORT_BOT_TOKEN` добавлен в `.env.example` и `render.yaml`; `support.tickets` создана и проверена в Supabase, тестовая строка удалена.
 - Live 2026-11-19 после `afe6edf`: `analytics database connected`, `/healthz`, `/app`, `/app/static/app.js`, `/app/catalog.json?lang=ru` 200, webhook pending 0; synthetic `/stats` от ADMIN_ID прошёл 200, в `analytics.users`/`analytics.events` появилась запись; ошибок в логах нет.
@@ -45,8 +47,8 @@
 
 - Живая проверка Telegram: `/start`, picker RU/EN, `/language`, `en`-Telegram, Mini App `?lang=en` и команды.
 - Живая проверка обычных пользовательских событий после первого реального `/start`/QR; synthetic `/stats` уже проверен.
-- Задеплоить support/all-time и проверить `/stats` за всё время, `/support`, webhook поддержки и пересылку тикета.
-- Администратору один раз нажать `/start` в `@QUaRc0DeSupport_bot`, иначе support-бот не сможет отправлять тикеты.
+- Проверить live-тикет после того, как администратор нажмёт `/start` в `@QUaRc0DeSupport_bot`.
+- Проверить `/support` и `/stats` в реальном Telegram-клиенте; synthetic webhook уже прошёл.
 - Живая проверка переключателя RU/EN в Mini App и per-chat menu button после `/language`/Apply.
 - Живая проверка Apply в Telegram: menu/inline и keyboard-сценарий.
 - Живая проверка PNG после принудительной отправки документом (`819253b`); SVG уже проверен пользователем.
